@@ -29,7 +29,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | dsh-visualize | bundle + client | 可视化 + 识图（visualize / vision_read_image） | [dsh-visualize](https://github.com/bitterSmilezzz/dsh-visualize) |
 | dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
 | dsh-work | bundle + client | 工作/协作（多 Agent 团队） | [dsh-work](https://github.com/bitterSmilezzz/dsh-work) |
-| dsh-usage-plugin | bundle + client | 用量/消耗统计（2026-08-19 脱钩内化改自研） | [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) |
+| dsh-usage-plugin | bundle + client | 用量/消耗统计（2026-08-19 脱钩内化改自研 + Pi 精简：概览/日历/余额面板 + usage_stats 工具） | [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) |
 
 ### 技能合并仓库
 
