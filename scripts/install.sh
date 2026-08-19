@@ -179,8 +179,8 @@ ensure_source() {
   fi
   echo "   [info] clone 插件源码: ${clone_url} → ${cache_dir}" >&2
   if $DRY_RUN; then
-    echo "   [dry-run] git clone $clone_url $cache_dir"
-    echo ""
+    # 全部输出走 stderr：本函数 stdout 是返回值（经命令替换捕获），不能混入日志文本
+    echo "   [dry-run] git clone $clone_url $cache_dir" >&2
     return 1
   fi
   mkdir -p "$PLUGIN_CACHE"
@@ -197,7 +197,9 @@ if [ -n "$TARGET_SKILLS" ]; then
   echo ""
   echo "🧩 复制 skills 到 $SKILLS_DIR ..."
   for pack in $TARGET_SKILLS; do
-    src="$(ensure_source "$pack")"
+    # set -e 下函数 return 1 会让命令替换赋值整体失败并中止脚本，
+    # 必须用 || true 兜底后再判空（CI 以 bash -e 运行，曾在此静默 exit 1）
+    src="$(ensure_source "$pack" || true)"
     if [ -z "$src" ]; then
       echo "   ⚠ 无法获取技能包源码: $pack"
       continue

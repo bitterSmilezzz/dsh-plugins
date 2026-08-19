@@ -103,10 +103,9 @@
       "source": "github",
       "repo": "bitterSmilezzz/dsh-usage-plugin",
       "ref": "main",
-      "origin": "third-party-fork",
-      "upstream": "feiyang-dev/dsh-usage-plugin",
+      "origin": "first-party",
       "scenario": "heavy",
-      "note": "用量/消耗统计（第三方 fork，保持独立）"
+      "note": "用量/消耗统计（2026-08-19 脱钩内化改自研，独立仓库）"
     },
     {
       "id": "dsh-ui-aqua",
