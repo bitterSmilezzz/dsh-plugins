@@ -4,7 +4,7 @@
 # 用法：
 #   bash scripts/install.sh                                     # 安装全部插件到 web profile
 #   bash scripts/install.sh --all                               # 同上（默认）
-#   bash scripts/install.sh --only dsh-essentials,dsh-memory    # 只装指定插件
+#   bash scripts/install.sh --only dsh-ui-tweaks,dsh-memory  # 只装指定插件
 #   bash scripts/install.sh --only dsh-dev                      # 只装技能包（复制到 ~/.agents/skills）
 #   bash scripts/install.sh --external                          # 外部浏览器组件
 #   bash scripts/install.sh -p headless --all                   # 指定 profile
@@ -13,7 +13,7 @@
 # 说明：
 # - 安装来源以 plugins.json 清单为真相：所有插件（source=github）从独立仓库 GitHub 直装。
 # - 纯技能包（dsh-dev/dsh-writing/dsh-design）由本脚本 clone 后复制到 ~/.agents/skills。
-# - preset（router-standard/liangshen）随 dsh-essentials 源码复制到 ~/.dsh/.agent-presets。
+# - 预设（router-standard/liangshen）已随 dsh-essentials 删除（2026-08-19），不再复制。
 
 set -euo pipefail
 
@@ -54,7 +54,6 @@ done
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DSH_HOME_DIR="${DSH_HOME:-$HOME/.dsh}"
 SKILLS_DIR="${SKILLS_DIR:-$HOME/.agents/skills}"
-PRESETS_DIR="$DSH_HOME_DIR/.agent-presets"
 
 echo "📦 deepseek-plugins 安装"
 echo "   Profile:   $PROFILE"
@@ -235,36 +234,6 @@ if [ -n "$TARGET_SKILLS" ]; then
     done
   done
 fi
-
-# 复制预设（--all 模式：preset 随 essentials 源码复制；--only dsh-essentials 也复制）
-if [ "$MODE" = "all" ] || echo "$ONLY" | grep -q "dsh-essentials"; then
-  echo ""
-  echo "🎛 复制 presets 到 $PRESETS_DIR ..."
-  essentials_src="$(ensure_source dsh-essentials)"
-  if [ -z "$essentials_src" ]; then
-    echo "   ⚠ 无法获取 dsh-essentials 源码（preset 来源）"
-  else
-    preset_root="$essentials_src/preset"
-    if [ -d "$preset_root" ]; then
-      for preset_dir in "$preset_root"/*/; do
-        [ -d "$preset_dir" ] || continue
-        name="$(basename "$preset_dir")"
-        target="$PRESETS_DIR/$name"
-        if $DRY_RUN; then
-          echo "   [dry-run] 安装 preset: $name"
-          continue
-        fi
-        mkdir -p "$PRESETS_DIR"
-        rm -rf "$target"
-        cp -R "$preset_dir" "$target"
-        echo "   ✔ $name 已更新"
-      done
-    else
-      echo "   ⚠ dsh-essentials 无 preset 目录"
-    fi
-  fi
-fi
-
 # 外部浏览器组件 + skill
 if $DO_EXTERNAL; then
   echo ""
