@@ -1,8 +1,9 @@
 # THIRD-PARTY.md — 第三方插件治理：fork / 收编与本地修改追踪
 
-**2026-08-19 架构定型 v3（自研独立 / 技能合并 / 第三方独立）**：自研 bundle 插件拆为
-5 个独立仓库（`dsh-core`/`dsh-memory`/`dsh-visualize`/`dsh-ui-tweaks`/
-`dsh-work`；`dsh-essentials` 已于 2026-08-19 并入 dsh-ui-tweaks，路由预设删除），
+**2026-08-19 架构定型 v3（自研独立 / 技能合并 / 第三方独立）**：自研 bundle 插件为
+4 个独立仓库（`dsh-memory`/`dsh-visualize`/`dsh-ui-tweaks`/
+`dsh-work`；`dsh-essentials` 已于 2026-08-19 并入 dsh-ui-tweaks，路由预设删除；
+`dsh-core` 因无多消费者同日内联清理删除），
 技能包保持 `dsh-skills` 3 子包合并仓，第三方 fork 保持独立。来源真相见
 `plugins.json`（schema 3，技能子包含 `path`）。治理口径：
 
@@ -35,7 +36,7 @@
 > 为独立 bundle。`dsh-mode-boost` 删除。modlens 随 vision-bridge 半成品移出后不再维护。
 >
 > **2026-08-18/19 仓库拆分（全部完成）**：**15 个插件全部拆为独立仓库**——第一方
-> （dsh-core/essentials/memory/visualize/ui-tweaks/dev/writing/design/work/desktop-shell）
+> （essentials/memory/visualize/ui-tweaks/dev/writing/design/work/desktop-shell）
 > 用 filter-repo 提取历史建仓；第三方（dsh-market/usage-plugin/notify/better-sidebar）
 > 同样 filter-repo 拆分（本地修改已在仓库内），aqua 走 fork 上游。全部登记于
 > `plugins.json`（source=github）、由 `install.sh` 从 GitHub 直装。

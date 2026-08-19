@@ -1,17 +1,7 @@
 {
-  "$comment": "dsh-plugins 汇总仓库插件清单 — 来源真相（source of truth）。2026-08-19 架构 v3：自研插件拆分为独立仓库（dsh-core/memory/visualize/ui-tweaks/work；essentials 已并入 ui-tweaks，2026-08-19），技能包保持 dsh-skills 合并仓（3 子包）；第三方 fork 保持独立（需跟上游 merge）；desktop-shell 独立。type: bundle(真 bundle，dsh plugin add) | skills(纯技能包，复制 skills/) | preset(预设)。origin: first-party(自研) | third-party-fork(第三方 fork+本地改动)。repo 指向插件独立仓库；技能包子包经 path 语法安装（github:<repo>#<ref>&path:/<subdir>）。",
+  "$comment": "dsh-plugins 汇总仓库插件清单 — 来源真相（source of truth）。2026-08-19 架构 v3：自研插件拆分为独立仓库（memory/visualize/ui-tweaks/work；essentials 已并入 ui-tweaks，2026-08-19；dsh-core 因无多消费者于 2026-08-19 内联清理删除），技能包保持 dsh-skills 合并仓（3 子包）；第三方 fork 保持独立（需跟上游 merge）；desktop-shell 独立。type: bundle(真 bundle，dsh plugin add) | skills(纯技能包，复制 skills/) | preset(预设)。origin: first-party(自研) | third-party-fork(第三方 fork+本地改动)。repo 指向插件独立仓库；技能包子包经 path 语法安装（github:<repo>#<ref>&path:/<subdir>）。",
   "schema": 3,
   "plugins": [
-    {
-      "id": "dsh-core",
-      "type": "bundle",
-      "source": "github",
-      "repo": "bitterSmilezzz/dsh-core",
-      "ref": "main",
-      "origin": "first-party",
-      "scenario": "essentials",
-      "note": "共享工具包；自研合并仓 dsh-plugins 子包；被 essentials/work 以 github: 引用；独立仓库（2026-08-19 拆分）"
-    },
     {
       "id": "dsh-memory",
       "type": "bundle",
@@ -50,7 +40,7 @@
       "ref": "main",
       "origin": "first-party",
       "scenario": "work",
-      "note": "工作/协作；依赖 dsh-core(github 引用)；独立仓库（2026-08-19 拆分）"
+      "note": "工作/协作；2026-08-19 移除 dsh-core 依赖（内联清理）；独立仓库（2026-08-19 拆分）"
     },
     {
       "id": "dsh-dev",
