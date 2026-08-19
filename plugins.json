@@ -43,6 +43,16 @@
       "note": "工作/协作；2026-08-19 移除 dsh-core 依赖（内联清理）；独立仓库（2026-08-19 拆分）"
     },
     {
+      "id": "dsh-model-fix",
+      "type": "bundle",
+      "source": "github",
+      "repo": "bitterSmilezzz/dsh-model-fix",
+      "ref": "main",
+      "origin": "first-party",
+      "scenario": "all",
+      "note": "模型流式缺陷修复：opencode 端点 muse-spark-1.2 不发送 finish_reason/[DONE]，llm/stream 收尾改 stop（直连可用、不触发重试）；host-only bundle（2026-08-19 新建）"
+    },
+    {
       "id": "dsh-dev",
       "type": "skills",
       "source": "github",
