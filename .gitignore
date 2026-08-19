@@ -7,3 +7,4 @@ node_modules/
 plugin-list.txt
 dsh-desktop-shell/
 dsh-usage/
+.trace-compare-shots/

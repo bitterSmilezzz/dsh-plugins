@@ -34,6 +34,17 @@ const step = async (name, fn) => {
   }
 }
 
+// 双语选择器（headless 默认 en locale，用户 GUI 是 zh）
+const TRIGGER_CSS = 'button[aria-label="Open Trace Compare"], button[aria-label="打开 Trace 对比"]'
+// role=tab + hasText 正则最稳（probe 实测：text= 混合引擎列表不可靠）
+const LIVE_TAB = page => page.locator('[role="tab"]').filter({ hasText: /Live Maze|实时迷宫/ }).first()
+
+/** sandbox iframe 每次重新取 Frame 句柄（对象不会因重挂失效）。 */
+async function iframeFrame(page, title) {
+  const el = await page.locator(`iframe[title="${title}"]`).elementHandle()
+  return el === null ? null : el.contentFrame()
+}
+
 const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
 const consoleErrors = []
@@ -51,30 +62,30 @@ try {
       performance.getEntriesByType('resource')
         .filter((r) => r.name.includes('/plugins/dsh-trace-compare/'))
         .map((r) => ({ name: r.name.replace(/^https?:\/\/[^/]+/, ''), size: r.transferSize })))
+    if (hit.length === 0) throw new Error('dsh-trace-compare bundle 未加载')
     return { resources: hit }
   })
 
   // 2. 侧边栏入口
   await step('2-sidebar-trigger', async () => {
-    const trigger = page.locator('button[aria-label="打开 Trace 对比"], button[aria-label="Open Trace Compare"], text=Trace 对比').first()
+    const trigger = page.locator(TRIGGER_CSS)
     const n = await trigger.count()
-    if (n === 0) throw new Error('侧边栏未找到 Trace 对比入口')
+    if (n === 0) throw new Error('侧边栏未找到 Trace 对比入口（aria-label 双语均试）')
     await page.screenshot({ path: SHOTS + '01-sidebar.png' })
-    return { found: true }
+    return { found: n }
   })
 
   // 3. 点击入口 → 上传面 iframe
   await step('3-surface-opens', async () => {
-    const trigger = page.locator('button[aria-label="打开 Trace 对比"], button[aria-label="Open Trace Compare"]').first()
-    await trigger.click()
+    await page.locator(TRIGGER_CSS).first().click()
     await page.waitForTimeout(2000)
     const surface = page.locator('iframe[title="trace-compare"]')
     const n = await surface.count()
     if (n === 0) throw new Error('shell.overlay 未挂载 iframe[title=trace-compare]')
-    const frame = await surface.first().contentFrame()
+    const frame = await iframeFrame(page, 'trace-compare')
     if (frame === null) throw new Error('iframe contentFrame 不可达')
     const dropTxt = await frame.locator('body').innerText()
-    const hasDrop = /点击选择或拖拽|Upload|拖拽/.test(dropTxt)
+    const hasDrop = /点击选择或拖拽|Upload|拖拽|Drop/.test(dropTxt)
     await page.screenshot({ path: SHOTS + '02-surface.png' })
     return { iframe: n, dropVisible: hasDrop }
   })
@@ -82,20 +93,21 @@ try {
   // 4. 上传真实 zstd 会话 → 迷宫渲染
   await step('4-upload-maze-renders', async () => {
     if (!SAMPLE) return { skipped: 'SAMPLE 未提供' }
-    const surface = page.locator('iframe[title="trace-compare"]').first()
-    const frame = await surface.contentFrame()
+    const frame = await iframeFrame(page, 'trace-compare')
     if (frame === null) throw new Error('iframe 不可达')
     await frame.locator('input[type="file"]').setInputFiles(SAMPLE)
-    await page.waitForTimeout(6000)
+    await page.waitForTimeout(7000)
     const maze = await frame.evaluate(() => {
       const svg = document.getElementById('svg')
+      // 页面迷宫数据是顶层 let（不在 window 上），用 SVG 节点数与正文统计佐证渲染
+      const bodyTxt = (document.body.textContent || '').replace(/\s+/g, ' ').trim()
       return {
         svgNodes: svg ? svg.querySelectorAll('*').length : 0,
-        dataSteps: window.DATA ? window.DATA.lanes.reduce((n, l) => n + l.main.length + l.detours.length, 0) : null,
-        dataTools: window.DATA ? window.DATA.lanes.reduce((n, l) => n + l.stats.tools, 0) : null,
+        bodyStats: bodyTxt.slice(0, 160),
+        err: window.lastErr ? String(window.lastErr).slice(0, 200) : null,
       }
     })
-    if (maze.svgNodes === 0 || maze.dataSteps === null) throw new Error('迷宫未渲染: ' + JSON.stringify(maze))
+    if (maze.svgNodes < 100) throw new Error('迷宫未渲染: ' + JSON.stringify(maze))
     await page.screenshot({ path: SHOTS + '03-maze.png' })
     return maze
   })
@@ -104,40 +116,45 @@ try {
   await step('5-live-tab-mounts', async () => {
     await page.keyboard.press('Escape')
     await page.waitForTimeout(800)
-    // 打开第一个会话（sidebar 会话项选择器宽松探测）
-    const candidate = page.locator('[data-conversation-scroll] [role="tab"], [title]').first()
-    await page.screenshot({ path: SHOTS + '04-sessions.png' })
-    // 尝试点侧边栏会话：常见模式是 sidebar 里的可点击标题项
-    const items = page.locator('aside [role="button"]').filter({ hasText: /^.{1,40}$/ })
-    const n = await items.count()
-    if (n === 0) return { skipped: '未探测到会话项（截图 04 已存）' }
-    await items.nth(0).click()
-    await page.waitForTimeout(2000)
-    const liveTab = page.locator('text=实时迷宫').first()
-    const ln = await liveTab.count()
-    if (ln === 0) return { found: false, note: '会话已打开但无实时迷宫页签（可能会话无轨迹或 tab 未渲染）' }
-    await liveTab.click()
+    const row = page.locator('[class*="sessionRow"]').first()
+    if (await row.count() === 0) return { skipped: '未找到会话行' }
+    await row.click()
     await page.waitForTimeout(2500)
+    const liveTab = LIVE_TAB(page)
+    const ln = await liveTab.count()
+    if (ln === 0) {
+      await page.screenshot({ path: SHOTS + '04-no-live-tab.png' })
+      return { found: false, note: '会话已打开但无实时迷宫页签' }
+    }
+    await liveTab.click()
+    await page.waitForTimeout(3000)
     const live = page.locator('iframe[title="trace-live"]')
     const lc = await live.count()
     if (lc === 0) throw new Error('实时迷宫 iframe 未挂载')
+    const lframe = await iframeFrame(page, 'trace-live')
+    const liveInfo = lframe === null ? null : await lframe.evaluate(() => {
+      const svg = document.getElementById('svg')
+      return {
+        svg: !!svg,
+        svgNodes: svg ? svg.querySelectorAll('*').length : 0,
+        bodyTxt: (document.body.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80),
+      }
+    })
     await page.screenshot({ path: SHOTS + '05-live.png' })
-    return { found: true, iframe: lc }
+    return { found: true, iframe: lc, liveInfo }
   })
 
   // 6. 主题跟随（模拟宿主翻转 body[data-ds-dark-theme]）
   await step('6-theme-follows', async () => {
-    const surface = page.locator('iframe[title="trace-compare"]').first()
-    const open = await surface.count()
-    if (open === 0) {
-      const trigger = page.locator('button[aria-label="打开 Trace 对比"], button[aria-label="Open Trace Compare"]').first()
+    const surface = page.locator('iframe[title="trace-compare"]')
+    if (await surface.count() === 0) {
+      const trigger = page.locator(TRIGGER_CSS)
       if (await trigger.count() > 0) await trigger.click()
       await page.waitForTimeout(1500)
     }
     await page.evaluate(() => document.body.setAttribute('data-ds-dark-theme', ''))
     await page.waitForTimeout(1500)
-    const iframe = page.locator('iframe[title="trace-compare"]').first()
-    const frame = await iframe.contentFrame()
+    const frame = await iframeFrame(page, 'trace-compare')
     if (frame === null) throw new Error('iframe 不可达')
     const theme = await frame.evaluate(() => document.documentElement.getAttribute('data-theme'))
     await page.evaluate(() => document.body.removeAttribute('data-ds-dark-theme'))
