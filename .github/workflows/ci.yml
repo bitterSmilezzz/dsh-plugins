@@ -21,35 +21,25 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install dependencies
+      # meta-repo：插件均为独立仓库，本仓库只维护 plugins.json + 安装脚本。
+      # 可测面 = 清单一致性 + 各安装脚本的 --dry-run（不触网）。
+      - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: dsh-core unit tests
-        run: node --test dsh-core/test/*.test.mjs
+      - name: Manifest consistency (plugins.json)
+        run: node scripts/check-consistency.mjs
 
-      - name: Package consistency
-        run: node scripts/check-package-consistency.mjs
-
-      - name: Inject consistency
-        run: node scripts/check-inject-consistency.mjs
-
-      - name: Skill pack verification (dev)
-        run: node dsh-dev/scripts/verify-skills.mjs
-
-      - name: Skill pack verification (design)
-        run: node dsh-design/scripts/verify-skills.mjs
-
-      - name: Skill pack verification (writing)
-        run: node dsh-writing/scripts/verify-skills.mjs
+      - name: Manifest query smoke
+        run: node scripts/plugin-manifest.mjs list
 
       - name: Installer dry-run (all)
         run: bash scripts/install.sh --dry-run
 
+      - name: install-plugins dry-run
+        run: node scripts/install-plugins.mjs --dry-run
+
       - name: Settings apply dry-run
         run: node scripts/apply-settings.mjs --dry-run --settings /tmp/nonexistent-settings.yaml
-
-      - name: Benchmark
-        run: node scripts/benchmark.mjs --ci
 
       - name: External manifest dry-run
         run: node scripts/install-external.mjs --dry-run
