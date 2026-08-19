@@ -30,7 +30,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
 | dsh-work | bundle + client | 工作/协作（多 Agent 团队） | [dsh-work](https://github.com/bitterSmilezzz/dsh-work) |
 | dsh-usage-plugin | bundle + client | 用量/消耗统计（2026-08-19 脱钩内化改自研 + Pi 精简：概览/日历/余额面板 + usage_stats 工具） | [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) |
-| dsh-model-fix | bundle（host-only） | 模型流式缺陷修复：opencode 端点上 muse-spark-1.2 不发送 finish_reason/[DONE]，llm/stream 收尾改 stop（直连可用、不触发重试；2026-08-19 新建） | [dsh-model-fix](https://github.com/bitterSmilezzz/dsh-model-fix) |
+| dsh-model-fix | bundle（host-only） | 模型流式缺陷修复：opencode 端点上 muse-spark-1.2 不发送 finish_reason/[DONE]，llm/stream 收尾改 stop（直连可用、不触发重试；**无需开启 opencode 训练授权开关**；2026-08-19 新建） | [dsh-model-fix](https://github.com/bitterSmilezzz/dsh-model-fix) |
 
 ### 技能合并仓库
 
