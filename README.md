@@ -13,8 +13,9 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 
 ## 目录
 
-> ✅ **2026-08-19 架构定型（v3）**：自研 bundle 插件为 4 个独立仓库（memory/
-> visualize/ui-tweaks/work；essentials 已并入 ui-tweaks，dsh-core 因无多消费者已内联清理删除），
+> ✅ **2026-08-19 架构定型（v3）**：自研 bundle 插件为 5 个独立仓库（memory/
+> visualize/ui-tweaks/work/usage-plugin；essentials 已并入 ui-tweaks，dsh-core 因无多消费者已内联清理删除，
+> usage-plugin 同日脱钩内化改自研），
 > 技能包保持 dsh-skills 合并仓，
 > 第三方 fork 保持独立。
 > 本仓库为纯汇总（meta-repo），只维护 `plugins.json`（来源真相）+ 安装脚本 + 文档。
@@ -28,6 +29,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | dsh-visualize | bundle + client | 可视化 + 识图（visualize / vision_read_image） | [dsh-visualize](https://github.com/bitterSmilezzz/dsh-visualize) |
 | dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
 | dsh-work | bundle + client | 工作/协作（多 Agent 团队） | [dsh-work](https://github.com/bitterSmilezzz/dsh-work) |
+| dsh-usage-plugin | bundle + client | 用量/消耗统计（2026-08-19 脱钩内化改自研） | [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) |
 
 ### 技能合并仓库
 
@@ -43,7 +45,6 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | --- | --- | --- | --- |
 | [dsh-better-sidebar](https://github.com/bitterSmilezzz/dsh-better-sidebar) | bundle + client | 侧边栏/工作台（终端/编辑器/Git/浏览器） | fork 自 omdsh-dev/DSH-better-sidebar |
 | [dsh-market](https://github.com/bitterSmilezzz/dsh-market) | bundle + client | 可视化插件市场 | fork 自 dsh-market/dsh-market |
-| [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) | bundle + client | 用量/消耗统计 | fork 自 feiyang-dev/dsh-usage-plugin |
 | [dsh-ui-aqua](https://github.com/bitterSmilezzz/DSH-Transparent-UI-Plugin) | bundle + client | 玻璃质感主题（rc.7 本地版） | fork 自 WYH66666666/DSH-Transparent-UI-Plugin |
 | [dsh-desktop-shell](https://github.com/bitterSmilezzz/dsh-desktop-shell) | bundle | 原生桌面壳（macOS Swift + Windows Tauri） | 自研独立 |
 | [external](external/manifest.json) | 外部清单 | BrowserSkill + dsh-browser 等安装引导 | `external/manifest.json` |
@@ -51,10 +52,11 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 > **架构演进（2026-08-19）**：
 > - 自研插件先合并为 2 个 monorepo（dsh-plugins/dsh-skills），同日又拆回独立仓库；
 >   2026-08-19 再把 dsh-essentials（去路由预设）并入 dsh-ui-tweaks，并清理删除
->   dsh-core（共享函数内联进消费方），现为 4 个独立仓库
->   （memory/visualize/ui-tweaks/work），技能包仍留 dsh-skills 合并仓。
+>   dsh-core（共享函数内联进消费方），现为 5 个独立仓库
+>   （memory/visualize/ui-tweaks/work/usage-plugin），技能包仍留 dsh-skills 合并仓。
 > - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
-> - 第三方 fork（market/usage/better-sidebar/aqua）**保持独立**（需跟上游 merge）。
+> - 第三方 fork（market/better-sidebar/aqua）**保持独立**（需跟上游 merge）；
+>   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）。
 > - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 已改名收编为 `dsh-work`。
 > - `dsh-notify`（系统通知）已并入 `dsh-ui-tweaks`，代码级重构为单一 bundle。
 
@@ -79,8 +81,8 @@ cd deepseek-plugins
 bash scripts/install.sh
 ```
 
-`--all`（默认）安装**全部插件**：自研 6 bundle（独立仓库）+ 4 个第三方 fork +
-desktop-shell + 3 个技能包 + preset。安装来源以 [plugins.json](plugins.json) 为真相：
+`--all`（默认）安装**全部插件**：自研 6 bundle（独立仓库）+ 3 个第三方 fork +
+3 个技能包。安装来源以 [plugins.json](plugins.json) 为真相：
 bundle 全部从 GitHub 直装（`github:<repo>#<ref>`），技能包子包用 `&path:/<subdir>`；
 纯技能包 clone 到 `~/.dsh/plugin-cache/` 后复制 skills/ 与 preset/ 到对应目录。
 装完**硬刷新浏览器**（Cmd/Ctrl+Shift+R）。
@@ -143,11 +145,12 @@ repos, skills stay in the `dsh-skills` monorepo, third-party forks stay
 independent (see [plugins.json](plugins.json)); this repo holds the manifest,
 install scripts, and docs. All plugins install from GitHub.
 
-- `dsh-memory`, `dsh-visualize`, `dsh-work` — standalone repos;
+- `dsh-memory`, `dsh-visualize`, `dsh-work`, `dsh-usage-plugin` — standalone repos;
   `dsh-ui-tweaks` — standalone repo (base input + UI enhancements + desktop notifications,
-  merged from former essentials; `dsh-core` was inlined and removed 2026-08-19).
+  merged from former essentials; `dsh-core` was inlined and removed 2026-08-19;
+  `dsh-usage-plugin` decoupled from upstream and became first-party 2026-08-19).
 - `dsh-skills` — monorepo: `dsh-dev`, `dsh-writing` (39 writing skills), `dsh-design`.
-- `dsh-better-sidebar`, `dsh-market`, `dsh-usage-plugin`,
+- `dsh-better-sidebar`, `dsh-market`,
   `DSH-Transparent-UI-Plugin` (aqua) — third-party forks (independent, track upstream).
 - `dsh-desktop-shell` — native desktop shell (macOS Swift + Windows Tauri).
 - `external/` — browser/TUI install manifest.

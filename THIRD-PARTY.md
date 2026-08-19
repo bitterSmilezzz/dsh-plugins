@@ -1,8 +1,9 @@
 # THIRD-PARTY.md — 第三方插件治理：fork / 收编与本地修改追踪
 
 **2026-08-19 架构定型 v3（自研独立 / 技能合并 / 第三方独立）**：自研 bundle 插件为
-4 个独立仓库（`dsh-memory`/`dsh-visualize`/`dsh-ui-tweaks`/
-`dsh-work`；`dsh-essentials` 已于 2026-08-19 并入 dsh-ui-tweaks，路由预设删除；
+5 个独立仓库（`dsh-memory`/`dsh-visualize`/`dsh-ui-tweaks`/
+`dsh-work` + `dsh-usage-plugin`（同日脱钩内化改自研）；`dsh-essentials` 已于
+2026-08-19 并入 dsh-ui-tweaks，路由预设删除；
 `dsh-core` 因无多消费者同日内联清理删除），
 技能包保持 `dsh-skills` 3 子包合并仓，第三方 fork 保持独立。来源真相见
 `plugins.json`（schema 3，技能子包含 `path`）。治理口径：
@@ -11,8 +12,10 @@
   收编进汇总仓库）；后续上游更新用 `git fetch upstream && git merge upstream/main`，
   冲突对照本文「本地修改」列复查。
 - **第三方 fork（保持独立，不合并）**：`dsh-better-sidebar`、`dsh-market`、
-  `dsh-usage-plugin`、`DSH-Transparent-UI-Plugin`（aqua）——因需跟上游
+  `DSH-Transparent-UI-Plugin`（aqua）——因需跟上游
   merge，独立仓库管理。
+- **已脱离上游（按第一方维护）**：`dsh-usage-plugin`（2026-08-19 脱钩内化改自研，
+  独立仓库；本地修改 4 处保留，上游更新仅作 cherry-pick 参考）。
 - **自研插件**：合并进 `dsh-plugins`/`dsh-skills`（subtree 并入，历史保留）；旧的 8 个
   独立自研仓库已删除（历史经 subtree 并入新合并仓）。
 - **收编为自研（已并入 ui-tweaks）**：`dsh-notify`（系统通知）2026-08-19 并入 dsh-plugins 作子包，
@@ -55,7 +58,7 @@
 | ~~dsh-router-standard 预设~~ | yjh051108/dsh-router-standard（**源仓库**，套装仓库 dsh-routing-suite 已弃用） | MIT | ① 测试 import 路径修复 ② preset.yml description 加引号 + 中文化 | **已删除（2026-08-19）**：Router Standard/Spec 预设随用户要求全部移除，不再跟随上游 |
 | ~~dsh-mode-boost~~ | ~~yjh051108/dsh-mode-boost~~ | ~~MIT~~ | **已删除（2026-08-18 去芜存菁）**：mode-boost 自动应用路由违反设计理念，host 副本 `lib/mode-boost/` 已移除 | — |
 | ~~dsh-essentials/lib/modlens~~ | ~~liustack/modlens~~ | ~~MIT~~ | **已随 vision-bridge 移出**：modlens 已被 vision-bridge 替代，半成品从 essentials 移除；visualize + vision-bridge 现独立为 `dsh-visualize` | — |
-| [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) | feiyang-dev/dsh-usage-plugin（1.4.0） | MIT | ① 概览统计卡加 SVG 图标；② 导出按钮收敛为「导出 ▾」下拉（CSV/JSON/PNG/打开目录）；③ 「用量与消耗」「剩余余额查询」合并为一个「用量统计」入口（内部 tab 切换）；④ 设置导航图标改为 DSH 原生 `ic_ds_goal_outline_16` 风格（避免与模型图标重复） | **独立仓库（2026-08-19 拆分）**：`bitterSmilezzz/dsh-usage-plugin`；升级 = `git fetch upstream && git merge` 后复查修改点 |
+| [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) | ~~feiyang-dev/dsh-usage-plugin（1.4.0）~~（**已脱钩**） | MIT | ① 概览统计卡加 SVG 图标；② 导出按钮收敛为「导出 ▾」下拉（CSV/JSON/PNG/打开目录）；③ 「用量与消耗」「剩余余额查询」合并为一个「用量统计」入口（内部 tab 切换）；④ 设置导航图标改为 DSH 原生 `ic_ds_goal_outline_16` 风格（避免与模型图标重复） | **已脱离上游，按第一方维护（2026-08-19 脱钩内化）**：独立仓库 `bitterSmilezzz/dsh-usage-plugin`；不再跟上游 merge，上游更新仅作 cherry-pick 参考 |
 | ~~dsh-notify~~（并入 ui-tweaks） | omdsh-dev/dsh-web-ui-notify（0.1.4） | BSD-3-Clause → MIT | 无（原样复制，host no-op，client 通知逻辑） | **已并入 `dsh-ui-tweaks`（2026-08-19）**：notify 功能收编进 dsh-ui-tweaks 重构为单一 bundle，不再单独维护 |
 | [dsh-market](https://github.com/bitterSmilezzz/dsh-market) | dsh-market/dsh-market（v1.9.0，459★） | MIT | ① **lib/ 构建产物入库**（上游 .gitignore 忽略 lib/，源码仓库无 lib；本地安装/链接会缺 `lib/index.js`，故移除 .gitignore 的 `lib/` 并提交构建产物，免构建安装）② **2026-08-19 独立仓库拆分**：移除 `prepare` 脚本（git 源安装会触发构建被 pnpm onlyBuiltDependencies 拦截）③ patch `id: dshmarket` 保持（逻辑 id） | **独立仓库（2026-08-19 拆分）**：`bitterSmilezzz/dsh-market`，filter-repo 提取历史；升级 = `git fetch upstream && git merge` 后复查修改点 |
 | [dsh-better-sidebar](https://github.com/bitterSmilezzz/dsh-better-sidebar) | omdsh-dev/DSH-better-sidebar（v0.12.2） | MIT | ① 从 npm 包收编源码（src+lib）；② **2026-08-16 合并进 essentials**：host apply + client sub_betterSidebar，新增 ws/node-pty 依赖与 webRuntime inject；终端/编辑器 chunk 仍由 host `/sidebar/bundle` 路由提供；③ **2026-08-19 独立仓库拆分**：移除 `prepare` 脚本（同 market） | **独立仓库（2026-08-19 拆分）**：`bitterSmilezzz/dsh-better-sidebar`，filter-repo 提取历史；升级 = `git fetch upstream && git merge` 后复查修改点 |
