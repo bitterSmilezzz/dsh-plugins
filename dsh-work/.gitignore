@@ -1,6 +1,0 @@
-node_modules/
-*.tsbuildinfo
-.DS_Store
-# Regenerable development skill mirror (pnpm sync:skill); not part of the
-# shipped package (package.json files does not include .dsh).
-.dsh/
