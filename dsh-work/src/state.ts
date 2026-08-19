@@ -13,10 +13,11 @@
  * @module dsh-work/state
  */
 
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { sanitizeKey } from './team-key.ts'
 import type { TaskStatus, TeamMember, TeamMessage, TeamState, TeamTask } from './types.ts'
 
 /** Mailbox key of the captain. */
@@ -35,52 +36,28 @@ export async function withTeamLock<T>(key: string, fn: () => Promise<T>): Promis
   const previous = locks.get(key) ?? Promise.resolve()
   let release!: () => void
   const gate = new Promise<void>((resolve) => { release = resolve })
-  locks.set(key, previous.then(() => gate))
+  const tail = previous.then(() => gate)
+  locks.set(key, tail)
   await previous
   try {
     return await fn()
   } finally {
     release()
+    // Drop the tail only if we are still the current entry: a caller that
+    // queued behind us must not lose its place in the chain.
+    if (locks.get(key) === tail) {
+      locks.delete(key)
+    }
   }
-}
-
-/** Longest key emitted before truncating and appending a digest. */
-const MAX_KEY_LENGTH = 48
-
-/** Short stable digest, used to keep otherwise-colliding keys distinct. */
-function keyDigest(name: string): string {
-  return createHash('sha256').update(name).digest('hex').slice(0, 8)
 }
 
 /**
- * Fold a free-form name into a safe path/key segment.
- *
- * Unicode letters and digits survive, so CJK/Cyrillic/Greek names stay
- * distinct and readable; everything else — spaces, punctuation, path
- * separators, control characters — folds to `-`. An ASCII-only whitelist
- * mapped *every* non-Latin name onto one shared fallback, which silently
- * merged their mailboxes and rejected the second such member as a duplicate.
- *
- * A name with no letters or digits at all (pure emoji or punctuation) cannot
- * yield a readable key, so it gets a digest rather than a shared constant.
- * Over-long names are truncated with a digest appended, so names sharing a
- * long prefix stay distinct and the result stays within filesystem limits
- * (CJK costs 3 bytes per character in UTF-8).
- *
+ * Fold a free-form name into a safe path/key segment. Re-exported from the
+ * shared `team-key` module so the browser bundle derives the same ids.
  * @param name - any user-supplied name.
  * @returns a non-empty key safe as a single path segment.
  */
-export function sanitizeKey(name: string): string {
-  const cleaned = name.normalize('NFC').trim().toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
-    .replace(/^-+|-+$/g, '')
-  if (cleaned === '') return `k-${keyDigest(name)}`
-  const points = [...cleaned]
-  if (points.length > MAX_KEY_LENGTH) {
-    return `${points.slice(0, MAX_KEY_LENGTH).join('')}-${keyDigest(name)}`
-  }
-  return cleaned
-}
+export { sanitizeKey } from './team-key.ts'
 
 /**
  * Whether `dependencies` are all satisfied (every named task exists and
@@ -96,15 +73,19 @@ export function unsatisfiedDependencies(tasks: TeamTask[], dependencies: string[
 
 /**
  * The allowed task status transitions, keyed by current status.
- * Terminal statuses have no outgoing transitions.
+ * Terminal statuses normally have no outgoing transitions, but `failed` and
+ * `cancelled` keep a captain-only `pending` recovery edge so a failed task
+ * (or its cancelled stand-in) can be reopened and its dependency chain
+ * unblocked instead of bricking every transitive dependent forever. The
+ * captain gate lives in the tool layer (`agent_teams_update_task`), not here.
  */
 export const TASK_TRANSITIONS: Readonly<Record<TaskStatus, readonly TaskStatus[]>> = {
   pending: ['claimed', 'cancelled'],
   claimed: ['in_progress', 'failed', 'cancelled'],
   in_progress: ['completed', 'failed', 'cancelled'],
   completed: [],
-  failed: [],
-  cancelled: [],
+  failed: ['pending'],
+  cancelled: ['pending'],
 }
 
 /**
@@ -515,7 +496,7 @@ export function taskVisualState(
   const byId = new Map(tasks.map((task) => [task.id, task]))
   const openDependency = dependencies.some((dependencyId) => {
     const dependency = byId.get(dependencyId)
-    return dependency !== undefined && dependency.status !== 'completed'
+    return dependency === undefined || dependency.status !== 'completed'
   })
   return openDependency ? 'blocked' : 'open'
 }

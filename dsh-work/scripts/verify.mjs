@@ -133,6 +133,10 @@ check('pending -> in_progress denied', transitionError('pending', 'in_progress')
 check('in_progress -> completed allowed', transitionError('in_progress', 'completed') === undefined)
 check('completed -> in_progress denied', transitionError('completed', 'in_progress') !== undefined)
 check('same status is a no-op', transitionError('failed', 'failed') === undefined)
+check('failed -> pending allowed (captain recovery edge)', transitionError('failed', 'pending') === undefined)
+check('cancelled -> pending allowed (captain recovery edge)', transitionError('cancelled', 'pending') === undefined)
+check('completed -> pending denied', transitionError('completed', 'pending') !== undefined)
+check('pending -> completed denied (must go through claimed/in_progress)', transitionError('pending', 'completed') !== undefined)
 
 console.log('3/7 dependency gating')
 const tasks = [
@@ -143,6 +147,23 @@ const tasks = [
 check('all-done deps satisfied', unsatisfiedDependencies(tasks, ['t1']).length === 0)
 check('pending dep blocks', unsatisfiedDependencies(tasks, ['t2']).length === 1)
 check('failed dep blocks too', unsatisfiedDependencies(tasks, ['t3']).length === 1)
+
+console.log('3b/7 dependency cycle rejection (create_task)')
+const { wouldIntroduceCycle } = await import('../lib/tools.js')
+const noTasks = []
+const oneTask = [{ id: 't1', dependencies: [] }]
+const depChain = [
+  { id: 't1', dependencies: [] },
+  { id: 't2', dependencies: ['t1'] },
+]
+check('new task depending on nothing cannot cycle', wouldIntroduceCycle(noTasks, 't1', []) === false)
+check('new task depending on an existing leaf cannot cycle', wouldIntroduceCycle(oneTask, 't2', ['t1']) === false)
+check('new task depending on a task that depends on it IS a cycle', wouldIntroduceCycle(depChain, 't1', ['t2']) === true)
+check('transitive cycle is detected', wouldIntroduceCycle([
+  { id: 't1', dependencies: ['t2'] },
+  { id: 't2', dependencies: ['t3'] },
+], 't3', ['t1']) === true)
+check('unknown dependency id does not itself form a cycle', wouldIntroduceCycle(oneTask, 't2', ['ghost']) === false)
 
 console.log('4/7 on-disk team flow (temp dir)')
 const stateRoot = await mkdtemp(join(tmpdir(), 'dsh-work-verify-'))
@@ -261,7 +282,7 @@ check('completed -> completed visual state', taskVisualState('completed', [], vt
 check('in_progress -> running visual state', taskVisualState('in_progress', [], vtasks) === 'running')
 check('pending with completed dep -> open', taskVisualState('pending', ['t1'], vtasks) === 'open')
 check('pending with open dep -> blocked', taskVisualState('pending', ['t2'], vtasks) === 'blocked')
-check('missing dependency is ignored (not blocked)', taskVisualState('pending', ['t9'], vtasks) === 'open')
+check('missing dependency counts as blocked (matches unsatisfiedDependencies)', taskVisualState('pending', ['t9'], vtasks) === 'blocked')
 const depths = taskDepthsById(vtasks)
 check('t1 depth 0', depths.get('t1') === 0)
 check('t2 depth 1 (longest path)', depths.get('t2') === 1)
@@ -338,6 +359,7 @@ const captain = {
   id: 'captain-session',
   options: { provider: 'birth-provider', model: 'birth-model' },
   session: {
+    header: { delegationDepth: 0 },
     requestHeader: () => ({
       config: {
         provider: 'captain-provider',
@@ -425,7 +447,7 @@ await spawnMember(
   },
   { provider: 'spawn', maxDepth: 1 },
   {
-    withPending: async (_parentId, _label, _selection, operation) => operation(),
+    withPendingEffort: async (_parentId, _label, _effort, operation) => operation(),
   },
   overriddenSelection,
   captain,
@@ -498,12 +520,14 @@ const freshChild = fakeChildContext({
   label: 'agent-teams:fresh-team:backend',
   parentSessionId: 'captain-session',
   cwd: process.cwd(),
+  agentProvider: overriddenSelection.provider,
+  agentModel: overriddenSelection.model,
 })
 let disposeFresh
-await selectionRuntime.withPending(
+await selectionRuntime.withPendingEffort(
   'captain-session',
   'agent-teams:fresh-team:backend',
-  overriddenSelection,
+  overriddenSelection.reasoningEffort,
   async () => {
     disposeFresh = setupMemberSelection(freshChild.context)
   },

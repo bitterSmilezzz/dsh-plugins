@@ -5,6 +5,6 @@
     "jsx": "react-jsx",
     "types": []
   },
-  "include": ["src/client", "src/event-types.ts", "src/css-modules.d.ts"],
+  "include": ["src/client", "src/css-modules.d.ts"],
   "exclude": []
 }

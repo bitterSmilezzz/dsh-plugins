@@ -13,9 +13,9 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import { installModelSelection, type Agent, type ModelSelection } from '@deepseek-ai/dsh-agent'
+import { installModelSelection, type Agent } from '@deepseek-ai/dsh-agent'
 // Declaration merge only: makes ctx.subagents visible.
-import { foldSubagentDescriptor } from '@deepseek-ai/dsh-subagent'
+import { delegationDepthOf, foldSubagentDescriptor } from '@deepseek-ai/dsh-subagent'
 import { ReasoningEffortId } from '@deepseek-ai/dsh-llm'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import { join } from 'node:path'
@@ -69,52 +69,24 @@ export interface MemberLlmSelectionRequest {
   defaultModel?: string
 }
 
-/** Process-local bridge between spawn admission and synchronous child setup. */
-export interface MemberSelectionRuntime {
-  /** Make one selection visible while Harness materializes the fresh child. */
-  withPending<T>(
-    parentSessionId: string,
-    label: string,
-    selection: MemberLlmSelection,
-    operation: () => Promise<T>,
-  ): Promise<T>
-}
-
-const MEMBER_LABEL_PREFIX = 'agent-teams:'
-
-function pendingSelectionKey(parentSessionId: string, label: string): string {
-  return `${parentSessionId}\u0000${label}`
-}
-
-function selectionFromMember(member: TeamMember | undefined): MemberLlmSelection | undefined {
-  if (member?.provider === undefined || member.model === undefined) return undefined
-  const provider = member.provider.trim()
-  const model = member.model.trim()
-  if (provider === '' || model === '') return undefined
-  const reasoningEffort = member.reasoningEffort?.trim()
-  return {
-    provider,
-    model,
-    ...reasoningEffort === undefined || reasoningEffort === '' ? {} : { reasoningEffort },
-  }
-}
-
-function modelSelection(selection: MemberLlmSelection): ModelSelection {
-  return {
-    provider: selection.provider,
-    model: selection.model,
-    ...selection.reasoningEffort === undefined
-      ? {}
-      : { reasoningEffort: ReasoningEffortId(selection.reasoningEffort) },
-  }
+/** Optional member-level route requested by the captain. */
+export interface MemberLlmSelectionRequest {
+  /** Explicit LLM provider route; requires an explicit model. */
+  provider?: string
+  /** Explicit model id; otherwise the plugin default or captain model is used. */
+  model?: string
+  /** Plugin-level member model default. */
+  defaultModel?: string
 }
 
 /**
- * Resolve one member's complete model selection. Ordinary members snapshot the
- * captain's current request route and reasoning effort. An explicit member
- * provider/model or plugin-level model replaces only that route; the current
- * captain effort remains the inherited policy and is validated against the
- * target model before a child is created.
+ * Resolve one member's complete model selection, mirroring what
+ * `startContinuable`'s official route inheritance would choose. Ordinary
+ * members snapshot the captain's current request route and reasoning effort;
+ * an explicit member provider/model or plugin-level model replaces only that
+ * route. The resolved provider/model feeds the official `agentOptions`
+ * (persisted + cold-restored by the descriptor); the effort travels through
+ * the small pending bridge because `AgentOptions` has no effort field.
  */
 export async function resolveMemberLlmSelection(
   ctx: Context,
@@ -161,15 +133,40 @@ export async function resolveMemberLlmSelection(
   }
 }
 
+/** Process-local bridge between spawn admission and synchronous child setup.
+ * Only the reasoning effort travels through it: the provider/model route is
+ * already persisted and cold-restored by the official `startContinuable`
+ * descriptor (`resolveChildAgentOptions` + durable agentProvider/agentModel),
+ * so re-passing it here would duplicate the official mechanism. */
+export interface MemberSelectionRuntime {
+  /** Make one effort visible while Harness materializes the fresh child. */
+  withPendingEffort<T>(
+    parentSessionId: string,
+    label: string,
+    reasoningEffort: string | undefined,
+    operation: () => Promise<T>,
+  ): Promise<T>
+}
+
+const MEMBER_LABEL_PREFIX = 'agent-teams:'
+
+function pendingSelectionKey(parentSessionId: string, label: string): string {
+  return `${parentSessionId}\u0000${label}`
+}
+
 /**
  * Install the member selection bridge for every fresh or cold-resumed
- * continuable child. Fresh creation reads the pending in-memory selection;
- * cold resume restores the same selection from the owning team's durable
- * record. Legacy members without a complete saved route retain Harness's
- * descriptor provider/model behavior.
+ * continuable child.
+ *
+ * Provider/model are the official `startContinuable` descriptor's job
+ * (snapshotted before any await, restored on cold resume), so this bridge
+ * only fills the one slot the official route leaves open: reasoning effort,
+ * which is absent from `AgentOptions` and not restored by the descriptor.
+ * Fresh creation reads the pending in-memory effort; cold resume reads the
+ * owning team's durable record.
  */
 export function installMemberSelectionRuntime(ctx: Context, stateDir: string): MemberSelectionRuntime {
-  const pending = new Map<string, MemberLlmSelection>()
+  const pending = new Map<string, string>()
   ctx.subagents.registerContinuableSetup((childCtx) => {
     const child = childCtx.agent
     if (child === undefined) return () => undefined
@@ -182,8 +179,8 @@ export function installMemberSelectionRuntime(ctx: Context, stateDir: string): M
     const parentSessionId = child.session.header.parentSession
     if (parentSessionId === undefined) return () => undefined
     const key = pendingSelectionKey(parentSessionId, descriptor.label)
-    let selection = pending.get(key)
-    if (selection === undefined) {
+    let reasoningEffort: string | undefined = pending.get(key)
+    if (reasoningEffort === undefined) {
       const identity = descriptor.label.slice(MEMBER_LABEL_PREFIX.length)
       const separator = identity.indexOf(':')
       if (separator < 1 || separator === identity.length - 1) return () => undefined
@@ -192,35 +189,44 @@ export function installMemberSelectionRuntime(ctx: Context, stateDir: string): M
       const workspace = child.session.header.cwd ?? process.cwd()
       const team = readTeamSync(join(workspace, stateDir), teamId)
       if (team?.captainSessionId !== parentSessionId) return () => undefined
-      selection = selectionFromMember(team.members.find(member => member.name === memberName))
-      // An old team record has no provider/reasoning snapshot. Its durable
-      // Harness descriptor still restores provider/model, so leave it alone.
-      if (selection === undefined) return () => undefined
-      if (descriptor.agentProvider !== selection.provider || descriptor.agentModel !== selection.model) {
-        throw new Error(
-          `agent-teams: saved model route for member "${memberName}" does not match its subagent descriptor`,
-        )
-      }
+      const member = team.members.find(candidate => candidate.name === memberName)
+      reasoningEffort = member?.reasoningEffort?.trim() || undefined
+      // Provider/model come from the durable descriptor (official path); an
+      // old team record without an effort simply keeps the adapter default.
+      if (reasoningEffort === undefined) return () => undefined
     }
 
+    // Install the effort through the official per-agent selection waterfall.
+    // The provider/model pair comes from the durable descriptor (the same
+    // source the official resume path uses — `descriptor.agentProvider` /
+    // `descriptor.agentModel`), so we never re-state a route the official
+    // mechanism already owns, and we do not depend on `child.options` being
+    // populated at this setup point.
+    const provider = descriptor.agentProvider ?? child.options.provider
+    const model = descriptor.agentModel ?? child.options.model
+    if (provider === undefined || model === undefined) return () => undefined
     return installModelSelection(childCtx, {
-      current: modelSelection(selection),
+      current: {
+        provider,
+        model,
+        reasoningEffort: ReasoningEffortId(reasoningEffort),
+      },
       assembled: undefined,
     })
   })
 
   return {
-    async withPending<T>(
+    async withPendingEffort<T>(
       parentSessionId: string,
       label: string,
-      selection: MemberLlmSelection,
+      reasoningEffort: string | undefined,
       operation: () => Promise<T>,
     ): Promise<T> {
       const key = pendingSelectionKey(parentSessionId, label)
       if (pending.has(key)) {
-        throw new Error(`member model selection is already pending for "${label}"`)
+        throw new Error(`member reasoning effort is already pending for "${label}"`)
       }
-      pending.set(key, selection)
+      if (reasoningEffort !== undefined) pending.set(key, reasoningEffort)
       try {
         return await operation()
       } finally {
@@ -308,7 +314,17 @@ export async function spawnMember(
     throw new Error(`agent-teams: provider "${config.provider}" cannot restrict captain-only tools for members`)
   }
   const label = `${MEMBER_LABEL_PREFIX}${team.id}:${member.name}`
-  const start = await selections.withPending(captain.id, label, llmSelection, () => (
+  // The official `startContinuable` `maxDepth` is an ABSOLUTE delegation-depth
+  // cap (`resolveChildDepth` throws when `delegationDepthOf(parent) + 1 >
+  // maxDepth`). Passing the bare `memberMaxDepth` (a per-member re-delegation
+  // budget) there would reject every member of a non-root captain: a depth-1
+  // captain spawns a depth-2 member, which exceeds cap 1. Compute the absolute
+  // cap the member is allowed to reach instead: the member's own depth plus
+  // its re-delegation budget.
+  const memberMaxDepth = config.maxDepth === undefined
+    ? undefined
+    : delegationDepthOf(captain) + 1 + config.maxDepth
+  const start = await selections.withPendingEffort(captain.id, label, llmSelection.reasoningEffort, () => (
     ctx.subagents.startContinuable({
       provider: config.provider,
       label,
@@ -321,7 +337,7 @@ export async function spawnMember(
           provider: llmSelection.provider,
           model: llmSelection.model,
         },
-        ...config.maxDepth !== undefined ? { maxDepth: config.maxDepth } : {},
+        ...memberMaxDepth !== undefined ? { maxDepth: memberMaxDepth } : {},
       },
       signal,
     })

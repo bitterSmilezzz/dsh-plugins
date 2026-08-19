@@ -2,6 +2,6 @@ packages:
   - 'dsh-*'
 
 nodeLinker: hoisted
-autoInstallPeers: false
+autoInstallPeers: true
 onlyBuiltDependencies:
   - node-pty

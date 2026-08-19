@@ -10,6 +10,7 @@
  * the card survives restarts without writing an out-of-repo event type.
  * @module dsh-work/client/card
  */
+import { sanitizeKey } from "../team-key.js";
 /** Parse the only create-call fields the historic card owns. */
 export function parseAgentTeamsCreateArgs(value) {
     try {
@@ -20,8 +21,10 @@ export function parseAgentTeamsCreateArgs(value) {
         const name = parsed.name.trim();
         if (name === '')
             return undefined;
-        const cleaned = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        return { teamId: cleaned === '' ? 'team' : cleaned, name };
+        // Must agree byte-for-byte with the host's `sanitizeKey` (shared module):
+        // the card matches on-disk snapshots by this id, and a divergence (old
+        // ASCII-only regex) silently broke every non-ASCII team name.
+        return { teamId: sanitizeKey(name), name };
     }
     catch {
         return undefined;

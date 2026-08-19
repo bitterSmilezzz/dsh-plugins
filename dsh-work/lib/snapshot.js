@@ -29,7 +29,6 @@ function currentTaskOf(memberName, tasks) {
 export async function assembleTeamSnapshot(ctx, stateRoot, workspace, state) {
     const tasks = state.tasks;
     const depths = taskDepthsById(tasks);
-    const byName = new Map(state.members.filter((m) => m.status !== 'removed').map((m) => [m.name, m]));
     const activity = new Map();
     try {
         const children = await ctx.subagents.listChildren(state.captainSessionId);

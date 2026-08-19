@@ -31,8 +31,7 @@ dsh-my-plugin/
 ├── src/
 │   ├── index.ts          # host 入口：name/inject/Config/apply
 │   ├── tools.ts          # 工具注册（可选，大插件拆文件）
-│   ├── events.ts         # 会话事件写入（可选）
-│   ├── event-types.ts    # 事件类型 + SessionEventMap 合并（零 import！）
+│   ├── team-key.ts       # 共享纯函数（host 与 client 同源；如 sanitizeKey）
 │   ├── snapshot.ts       # host 侧数据组装（可选）
 │   ├── state.ts          # 文件持久化（可选）
 │   └── client/
@@ -120,7 +119,7 @@ dsh-my-plugin/
     "jsx": "react-jsx",          // 必须
     "types": []                  // 浏览器环境无 node 类型
   },
-  "include": ["src/client", "src/event-types.ts", "src/css-modules.d.ts"],
+  "include": ["src/client", "src/css-modules.d.ts"],
   "exclude": []
 }
 ```
@@ -250,28 +249,21 @@ export async function withTeamLock<T>(key: string, fn: () => Promise<T>): Promis
 - 事件/模型可能绕过工具仪式（直接写文件），面板类 UI 应以磁盘为真相源（host 快照），
   而不是事件重放（事件用于对话流节点与审计）。
 
-### 2.6 会话事件写入（对话流 UI 的数据源）
+### 2.6 会话事件写入：为什么 dsh-work 不用自定义事件类型
 
-```ts
-// event-types.ts —— 事件类型 + SessionEventMap 合并，必须零 import！
-export interface AgentTeamsTeamCreatedData { readonly teamId: string; readonly name: string }
-declare module '@deepseek-ai/dsh-session/types' {
-  interface SessionEventMap { 'my-plugin/team-created': AgentTeamsTeamCreatedData }
-}
-```
-
-```ts
-// events.ts —— 写入
-import type { Session, SessionEventMap } from '@deepseek-ai/dsh-session/types'
-session.append(type, data)   // type 必须已并入 SessionEventMap
-```
-
-- `SessionEventMap` 是 merge-extensible：`declare module '@deepseek-ai/dsh-session/types'` 合并即可，
-  浏览器端 Conversation Node 会按 `seq` 确定性重放这些事件。
-- **event-types.ts 必须零 import**：它同时被 host 与 client 两个 program 加载；一旦 import 了
-  host 侧包（如 `dsh-session` 的 index），client program 的声明合并就被污染（见 3.1/5.3）。
-- append 目标：把事件写进"队长会话"（而非调用者），成员操作也统一落回队长会话，保证单一监控面；
-  队长不可达时回退调用者会话。`session.append` 会抛，包一层 try/warn 降级。
+> **2026-08-19 变更**：dsh-work 曾有一层 `events.ts`/`event-types.ts` 用 `session.append('agent-teams/*', …)`
+> 记录团队事件，已**整体删除**。原因（官方 rc.7 契约核实）：
+> - `KNOWN_SESSION_EVENT_TYPES` 是仓库内脚本生成的固定集合，docstring 明说 out-of-repo 插件事件
+>   「outside this list by construction; a registration surface … is deferred until such a consumer
+>   exists」——**rc.7 没有插件自定义会话事件类型的注册/挂靠 API**。
+> - `SessionEvent.ignorable` 是唯一逃生口，但 `Session.append()` **不接受 ignorable 参数**（第三参仅
+>   SurfaceIntent），插件无法通过公共 API 写出 ignorable 事件。
+> - 硬写未注册类型进 session log 是**危险路径**：live append 不查已知集，但重启/冷恢复读日志时
+>   拒读整份 session → 团队会话持久化重启后不可恢复。
+> - 可靠官方路径 = **`tool/call` + `tool/result`**（known + surface），尤其 `tool/result.meta` 是官方
+>   设计的插件展示通道；dsh-work 的对话卡片折叠正是走这条路径（见 `agent-teams-card-definition.ts`）。
+> - 因此：插件业务事件一律映射到官方已知事件（tool/call + tool/result），或只写插件自有磁盘文件
+>   （本插件以 team.json/JSONL 为真相源），**绝不写未注册类型进 session log**。
 
 ## 3. client 侧开发
 
@@ -285,9 +277,9 @@ session.append(type, data)   // type 必须已并入 SessionEventMap
 拆开后的规则：
 
 - host program：`include: ["src"]`，`exclude: ["src/client"]`；只链接 host 包类型。
-- client program：`include: ["src/client", "src/event-types.ts", ...]`；**不能编译任何 import 了
-  host 侧 index 的文件**（这就是 event-types 零 import 的原因；client 文件只 import 浏览器侧包和
-  event-types 的类型）。
+- client program：`include: ["src/client", ...]`；**不能编译任何 import 了 host 侧 index 的文件**
+  （client 文件只 import 浏览器侧包；host/client 共享的纯函数放 `src/team-key.ts` 这类零依赖模块，
+  两个 program 都能编译）。
 - `declare module '@deepseek-ai/dsh-session/types'` 的合并只需 `dsh-session/types` 子路径被加载
   （子路径文件不包含 host 的 Context 合并，安全）。
 
@@ -543,7 +535,7 @@ dsh --profile <scratch> --dump-config   # 验证组合树里出现插件行（�
 - **根因**：模块增强只对**已加载进 program** 的模块生效；纯 `declare module` 文件零 import 时
   目标模块从未被加载。
 - **解决**：在合并文件顶部加 `import type {} from '<目标模块>'`（加载模块、编译期擦除、不进 bundle）。
-  这也是 event-types.ts 必须零 import、但 definition 文件可以带 type-only import 的原因。
+  这也是共享类型文件通常只带 type-only import（含 `import type {}` 占位）的原因。
 
 ### 5.4 JSX 报成串语法错误
 
