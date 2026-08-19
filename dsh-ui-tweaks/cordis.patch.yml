@@ -1,0 +1,26 @@
+# dsh-ui-tweaks — 界面增强 + 桌面通知（合并重构后的单一 bundle）
+#
+# 从 dsh-notify + dsh-ui-tweaks 合并而来。功能：
+# - plugin-inventory：插件列表增强（分类 tab）
+# - auto-hide-composer：输入框自动隐藏
+# - retry-settings：请求重试次数设置（注册 /api/retry-settings 路由）
+# - immersive-mode：沉浸模式
+# - keyboard-shortcuts：全局快捷键
+# - notify：桌面通知（审批/提问/轮次/会话完成）
+#
+# 设置入口统一放在「通用设置」下的「界面增强」总入口（settings.general.item）。
+# 全部开关/选项读写统一 localStorage 配置对象（dsh-ui-tweaks.settings）。
+#
+# Install:   dsh plugin --profile <profile> add <path-or-github>
+
+# 禁用官方「插件列表」UI（id: ui-settings-plugin-inventory），
+# 由本包注册的增强版替换（分类 tab）。
+- id: ui-settings-plugin-inventory
+  disabled: true
+
+- insert:
+    - id: dsh-ui-tweaks
+      name: dsh-ui-tweaks
+      inject:
+        - webServer
+        - settings

@@ -1,0 +1,2 @@
+name: Router Standard (experimental)
+description: "任务感知路由预设（RL 接口还原）：首轮仅注入 RL 训练句 + shell/编辑器工具，模型以想一段做一段的 think-act 反馈循环工作（实测 25 步 / 24 次工具调用）；首个持久工具调用后放开完整工具集。"

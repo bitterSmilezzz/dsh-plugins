@@ -1,0 +1,17 @@
+# dsh-visualize — 可视化工具 + 无损识图桥（独立 bundle）
+#
+# 从 dsh-essentials 拆出。包含 2 个 LLM 工具：
+# - visualize：模型生成交互式 HTML 卡片
+# - vision_read_image：纯文本模型看图
+#
+# Install:   dsh plugin --profile <profile> add <path-or-github>
+
+- insert:
+    - id: dsh-visualize
+      name: dsh-visualize
+      inject:
+        - fs
+        - tools
+        - skills
+        - llm
+        - attachments
