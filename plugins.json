@@ -105,7 +105,7 @@
       "ref": "main",
       "origin": "first-party",
       "scenario": "heavy",
-      "note": "用量/消耗统计（2026-08-19 脱钩内化改自研，独立仓库）"
+      "note": "用量/消耗统计（2026-08-19 脱钩内化改自研 + Pi 精简 v0.2.0：面板=概览/日历/余额，新增 usage_stats 工具）"
     },
     {
       "id": "dsh-ui-aqua",
