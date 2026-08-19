@@ -1,0 +1,87 @@
+{
+  "name": "dsh-essentials",
+  "version": "0.1.0",
+  "description": "会话核心体验增强组合包：模型选择器 + 粘贴上传 + @文件引用 + 可视化卡片 + 视觉桥（Vision Bridge） + 输入框自动隐藏 + 沉浸模式 + 全局快捷键 + 请求重试设置 + 无损省 token + 超大工具结果自动剪枝 + 路由预设（Router Standard/Spec）（重功能已拆分为独立包）",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./preset/router-standard": "./preset/router-standard/preset.yml",
+    "./preset/router-spec": "./preset/router-spec/preset.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "preset",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-model-selection",
+        "@deepseek-ai/dsh-client-ui-input-trigger",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-theme"
+      ]
+    }
+  },
+  "dependencies": {
+    "dsh-core": "github:bitterSmilezzz/dsh-plugins#main&path:/dsh-core",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-llm": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-settings": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-skill": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-typert-protocol": "0.1.0-rc.7",
+    "@deepseek-ai/schemastery": "3.18.1"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-agent": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-api-remotes": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-input-trigger": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-conversation": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-model-selection": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-ui-theme": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-schema-form": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-client-web-react": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-typert-registry": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-settings": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.7",
+    "@deepseek-ai/dsh-skill": "^0.1.0-rc.7",
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitterSmilezzz/dsh-essentials.git"
+  },
+  "homepage": "https://github.com/bitterSmilezzz/dsh-essentials#readme",
+  "bugs": {
+    "url": "https://github.com/bitterSmilezzz/dsh-essentials/issues"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "dsh-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH 自研插件 monorepo — dsh-core/essentials/memory/visualize/ui-tweaks/work 同仓管理，独立发布",
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-consistency.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}

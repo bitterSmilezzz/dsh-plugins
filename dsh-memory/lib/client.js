@@ -1,0 +1,887 @@
+/**
+ * dsh-memory —— 浏览器部分（跑在网页 http://127.0.0.1:3080 里）。
+ *
+ * 本文件是手写的官方浏览器模块格式（window.__ModuleLoader__），
+ * 网页在用到时才执行它，不需要任何编译步骤。
+ *
+ * 按钮与面板都用最朴素的网页技术实现（不依赖 React）：
+ * - 入口按钮：插到「新会话」按钮正下方；读取官方按钮当前生效的样式并逐项
+ *   复制过来，任何主题下都长得一样；
+ * - 记忆面板：直接挂到页面 body，用转义过的内容填充 + 绑定事件；
+ * - 设置卡片：注册进「设置 → 插件配置」的 settings.plugin.item 槽位，
+ *   读写 /api/memory?action=config（这一块用到 shell 共享的 React，
+ *   拿不到 React 时自动跳过，不影响按钮与面板）；
+ * - 列表模式：搜索框纯前端过滤（标题/摘要/标签）、按月分组渐进渲染
+ *   （IntersectionObserver 哨兵，降级为滚动监听/全量渲染）、↑↓/Enter/Esc 键盘导航；
+ * - 数据：fetch('/api/memory')，由服务端部分（lib/index.js）应答。
+ */
+window.__ModuleLoader__.load({
+  id: 'dsh-memory',
+  factory: (require) => {
+    var module = { exports: {} }
+    var exports = module.exports
+
+    // React 由 shell 的模块表共享（不是本包依赖）；拿不到就降级为不注册设置卡片
+    let React = null
+    try { React = require('react') } catch { React = null }
+
+    // 面板样式：全部用 DSH 主题 token（--dsw-alias-*），随应用浅色/深色主题自动切换；
+    // 每个 token 后保留原深色 hex 作 fallback，主题变量缺失时退化为原深色观感。
+    // 强调色用 --dsw-alias-state-business-primary（DeepSeek 蓝：浅色 #4176E6 / 深色 #679EFE），
+    // 不用 --dsw-alias-brand-primary（那是中性对比色，浅=近黑/深=近白）。
+    const JM_CSS = `
+.jm-nav { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: var(--dsw-alias-label-caption, #7A828C); cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 12.5px; font-family: inherit; }
+.jm-nav:hover { color: var(--dsw-alias-label-primary, #C9CFD6); background: var(--dsw-alias-interactive-bg-hover, #1D2126); }
+.jm-nav-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex: none; }
+.jm-nav-icon svg { display: block; }
+.jm-newsession { cursor: pointer; font-family: inherit; }
+.jm-newsession:hover { color: var(--dsw-alias-label-primary) !important; background: var(--dsw-alias-interactive-bg-hover) !important; }
+.jm-newlabel { white-space: nowrap; max-width: 200px; overflow: hidden; }
+.jm-newsession.jm-rail .jm-newlabel { display: none; }
+.jm-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 260px; z-index: 400; background: var(--dsw-alias-bg-layer-1, #151517); color: var(--dsw-alias-label-primary, #C9CFD6); font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; display: flex; flex-direction: column; pointer-events: auto; border-left: 1px solid var(--dsw-alias-border-l2, #23282E); }
+.jm-overlay ::-webkit-scrollbar { width: 8px; height: 8px; }
+.jm-overlay ::-webkit-scrollbar-thumb { background: var(--dsw-alias-scrollbar-bg-l1, #31373F); border-radius: 4px; }
+.jm-overlay ::-webkit-scrollbar-thumb:hover { background: var(--dsw-alias-scrollbar-hover-l1, #31373F); }
+.jm-overlay ::-webkit-scrollbar-track { background: transparent; }
+.jm-topbar { height: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--dsw-alias-border-l2, #23282E); background: var(--dsw-alias-bg-layer-1, #151517); position: relative; }
+.jm-switch { display: flex; background: var(--dsw-alias-bg-mask-2, #14171B); border: 1px solid var(--dsw-alias-border-l2, #23282E); border-radius: 8px; padding: 3px; gap: 2px; }
+.jm-switch span { font-size: 12.5px; padding: 5px 22px; border-radius: 6px; color: var(--dsw-alias-label-caption, #7A828C); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; user-select: none; }
+.jm-switch span.jm-on { background: var(--dsw-alias-interactive-bg-hover, #1D2126); color: var(--dsw-alias-label-primary, #E4E8ED); }
+.jm-switch span:hover:not(.jm-on) { color: var(--dsw-alias-label-primary, #C9CFD6); }
+.jm-count { font-size: 11.5px; color: var(--dsw-alias-label-caption, #7A828C); }
+.jm-close { font-size: 11.5px; color: var(--dsw-alias-label-caption, #7A828C); background: none; border: 1px solid var(--dsw-alias-border-l2, #23282E); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+.jm-close:hover { color: var(--dsw-alias-label-primary, #E4E8ED); border-color: var(--dsw-alias-border-l3, #31373F); }
+.jm-view { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--dsw-alias-bg-layer-1, #151517); }
+.jm-scroll { flex: 1; overflow-y: auto; padding: 16px 24px 48px; }
+.jm-month { font-size: 12px; color: var(--dsw-alias-label-caption, #7A828C); margin: 14px 0 10px; display: flex; align-items: center; gap: 10px; }
+.jm-month::after { content: ''; flex: 1; height: 1px; background: var(--dsw-alias-border-l2, #23282E); }
+.jm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.jm-card { background: var(--dsw-alias-bg-layer-2, #1D2126); border: 1px solid var(--dsw-alias-border-l2, #23282E); border-radius: 8px; padding: 13px 15px; cursor: pointer; height: 168px; display: flex; flex-direction: column; transition: border-color .15s; overflow: hidden; }
+.jm-card:hover { border-color: var(--dsw-alias-border-l3, #31373F); }
+.jm-card-tall { height: 150px; }
+.jm-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.jm-num { min-width: 20px; height: 20px; padding: 0 6px; background: var(--dsw-alias-bg-mask-2, #262B31); color: var(--dsw-alias-label-caption, #7A828C); border-radius: 5px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.jm-title { font-size: 13px; font-weight: 600; color: var(--dsw-alias-label-primary, #E4E8ED); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jm-tag { font-size: 10.5px; color: var(--dsw-alias-state-business-primary, #5B8DB8); background: color-mix(in srgb, currentColor 10%, transparent); border: 1px solid color-mix(in srgb, currentColor 28%, transparent); padding: 1px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.jm-tag-purple { color: #9b8fc0; }
+.jm-tag-green { color: #7d9b6f; }
+.jm-tag-orange { color: #b08d5f; }
+.jm-excerpt { font-size: 12px; line-height: 1.7; color: var(--dsw-alias-label-caption, #7A828C); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+.jm-foot { margin-top: 8px; display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
+.jm-chip { font-size: 10.5px; color: var(--dsw-alias-label-caption, #7A828C); background: var(--dsw-alias-bg-mask-2, #101216); border: 1px solid var(--dsw-alias-border-l2, #23282E); padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.jm-ext { font-size: 9px; color: var(--dsw-alias-label-dimmed, #5c646e); border: 1px solid var(--dsw-alias-border-l2, #2c3239); border-radius: 3px; padding: 0 3px; }
+.jm-role { font-size: 10px; color: var(--dsw-alias-label-caption, #7A828C); border: 1px solid var(--dsw-alias-border-l2, #2c3239); border-radius: 3px; padding: 0 5px; flex-shrink: 0; }
+.jm-split { flex-direction: row; }
+.jm-preview { flex: 1; min-width: 0; overflow-y: auto; padding-bottom: 60px; background: var(--dsw-alias-bg-layer-1, #151517); }
+.jm-topbar-detail { justify-content: flex-start; padding: 0 20px; gap: 12px; }
+.jm-dtitle { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--dsw-alias-label-primary, #E4E8ED); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.jm-topbar-right { position: absolute; right: 20px; display: flex; align-items: center; gap: 10px; }
+.jm-topbar-detail .jm-topbar-right { position: static; flex: none; }
+.jm-seg { display: flex; border: 1px solid var(--dsw-alias-border-l2, #23282E); border-radius: 7px; overflow: hidden; }
+.jm-seg span { font-size: 11.5px; padding: 4px 12px; color: var(--dsw-alias-label-caption, #7A828C); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; user-select: none; }
+.jm-seg span.jm-on { background: var(--dsw-alias-interactive-bg-hover, #1D2126); color: var(--dsw-alias-label-primary, #E4E8ED); }
+.jm-pbody { padding: 22px 34px; max-width: 860px; }
+.jm-psummary { font-size: 12.5px; line-height: 1.9; color: var(--dsw-alias-label-caption, #7A828C); margin: 0; }
+.jm-pchips { margin: 14px 0 26px; display: flex; flex-wrap: wrap; gap: 7px; }
+.jm-h1 { font-size: 21px; color: var(--dsw-alias-state-business-primary, #5B8DB8); font-weight: 600; margin: 6px 0 4px; }
+.jm-h2 { font-size: 16px; color: var(--dsw-alias-state-business-primary, #5B8DB8); font-weight: 600; margin: 26px 0 12px; }
+.jm-h3 { font-size: 14px; color: var(--dsw-alias-label-primary, #C9CFD6); font-weight: 600; margin: 18px 0 8px; }
+.jm-p { font-size: 13px; line-height: 1.95; color: var(--dsw-alias-label-primary-dimmed, #b3bac2); margin: 0 0 12px; }
+.jm-p strong { color: var(--dsw-alias-state-business-primary, #6FA3CC); }
+.jm-ul { padding-left: 20px; margin: 0 0 12px; }
+.jm-li { font-size: 13px; line-height: 1.9; color: var(--dsw-alias-label-primary-dimmed, #b3bac2); margin-bottom: 4px; }
+.jm-quote { margin: 0 0 12px; padding: 4px 14px; border-left: 2px solid var(--dsw-alias-border-l3, #31373F); color: var(--dsw-alias-label-caption, #7A828C); }
+.jm-table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 12.5px; }
+.jm-table th { text-align: left; color: var(--dsw-alias-label-caption, #7A828C); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--dsw-alias-border-l2, #23282E); }
+.jm-table td { padding: 9px 10px; border-bottom: 1px solid var(--dsw-alias-border-l1, #1c2126); color: var(--dsw-alias-label-primary-dimmed, #b3bac2); line-height: 1.6; }
+.jm-pre { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; line-height: 1.7; color: var(--dsw-alias-label-primary-dimmed, #b3bac2); background: var(--dsw-alias-markdown-code-block, #101216); border: 1px solid var(--dsw-alias-border-l2, #23282E); border-radius: 8px; padding: 14px 16px; white-space: pre-wrap; word-break: break-word; margin: 0 0 12px; }
+.jm-code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; background: var(--dsw-alias-markdown-inline-code, #1D2126); border-radius: 4px; padding: 0 4px; }
+.jm-list { width: 330px; flex-shrink: 0; border-left: 1px solid var(--dsw-alias-border-l2, #23282E); background: var(--dsw-alias-bg-layer-1, #151517); overflow-y: auto; padding: 10px 10px 40px; }
+.jm-lp-month { font-size: 11.5px; color: var(--dsw-alias-label-caption, #7A828C); padding: 10px 8px 6px; display: flex; align-items: center; gap: 6px; }
+.jm-lp-item { padding: 9px 10px; border-radius: 7px; cursor: pointer; margin-bottom: 2px; }
+.jm-lp-item:hover { background: var(--dsw-alias-interactive-bg-hover, #1D2126); }
+.jm-lp-item.jm-active { background: var(--dsw-alias-state-business-tertiary, #1A232C); border-left: 2px solid var(--dsw-alias-state-business-primary, #5B8DB8); padding-left: 8px; }
+.jm-lp-row { display: flex; align-items: center; gap: 7px; }
+.jm-lp-row .jm-num { min-width: 18px; height: 18px; font-size: 10.5px; }
+.jm-lp-t { font-size: 12.5px; font-weight: 600; color: var(--dsw-alias-label-primary, #C9CFD6); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jm-lp-item.jm-active .jm-lp-t { color: var(--dsw-alias-state-business-primary, #6FA3CC); }
+.jm-lp-ex { font-size: 11px; color: var(--dsw-alias-label-dimmed, #6b737d); line-height: 1.65; margin-top: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.jm-empty { padding: 40px; color: var(--dsw-alias-label-caption, #7A828C); text-align: center; }
+.jm-loading { padding: 40px; color: var(--dsw-alias-label-caption, #7A828C); text-align: center; }
+.jm-searchwrap { flex-shrink: 0; padding: 10px 24px 12px; border-bottom: 1px solid var(--dsw-alias-border-l1, #1c2126); }
+.jm-search { width: 100%; box-sizing: border-box; background: var(--dsw-alias-bg-mask-2, #101216); border: 1px solid var(--dsw-alias-border-l2, #23282E); border-radius: 8px; color: var(--dsw-alias-label-primary, #C9CFD6); font: inherit; font-size: 12.5px; padding: 7px 12px; outline: none; transition: border-color .15s; }
+.jm-search::placeholder { color: var(--dsw-alias-label-dimmed, #6b737d); }
+.jm-search:focus { border-color: var(--dsw-alias-state-business-primary, #5B8DB8); }
+.jm-more { padding: 20px 0 8px; color: var(--dsw-alias-label-dimmed, #6b737d); font-size: 12px; text-align: center; }
+.jm-empty-search { padding: 64px 24px; }
+.jm-card.jm-kb-active { border-color: var(--dsw-alias-state-business-primary, #5B8DB8); box-shadow: 0 0 0 1px var(--dsw-alias-state-business-primary, #5B8DB8); }
+@media (max-width: 960px) {
+  .jm-grid { grid-template-columns: 1fr; }
+  .jm-scroll { padding: 12px 14px 40px; }
+  .jm-searchwrap { padding: 10px 14px 12px; }
+  .jm-pbody { padding: 18px 16px; }
+  .jm-list { width: 260px; }
+}
+`
+
+    // 「设置 → 插件配置」里的配置卡片样式（结构与官方 PluginCard 一致：收起/展开、未保存徽标、底部按钮）
+    const CFG_CSS = `
+.jm-cfg-card { border: 1px solid var(--dsw-alias-border-l2, #31373F); background: var(--dsw-alias-bg-layer-3, #14171B); border-radius: 12px; list-style: none; transition: border-color .16s, background .16s; color: var(--dsw-alias-label-primary, #E4E8ED); font-size: 13px; }
+.jm-cfg-card:hover { border-color: var(--dsw-alias-label-dimmed, #5c646e); }
+.jm-cfg-open { background: var(--dsw-alias-bg-layer-2, #1D2126); border-color: var(--dsw-alias-label-dimmed, #5c646e); }
+.jm-cfg-header { appearance: none; width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer; background: none; border: 0; border-radius: 12px; align-items: center; gap: 12px; padding: 14px 16px; display: flex; }
+.jm-cfg-header:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #5B8DB8); outline-offset: -2px; }
+.jm-cfg-headtext { flex-direction: column; flex: 1; gap: 4px; min-width: 0; display: flex; }
+.jm-cfg-name { color: var(--dsw-alias-label-primary, #E4E8ED); font-size: 15px; font-weight: 600; line-height: 1.4; }
+.jm-cfg-desc { color: var(--dsw-alias-label-caption, #7A828C); font-size: 13px; line-height: 1.5; }
+.jm-cfg-chevron { color: var(--dsw-alias-label-caption, #7A828C); flex: none; transition: transform .16s; display: inline-flex; }
+.jm-cfg-chevron-open { transform: rotate(180deg); }
+.jm-cfg-pending { white-space: nowrap; background: var(--dsw-alias-bg-module-platform, #262B31); color: var(--dsw-alias-label-primary, #C9CFD6); border-radius: 999px; flex: none; padding: 1px 8px; font-size: 11px; font-weight: 500; line-height: 17px; }
+.jm-cfg-body { border-top: 1px solid var(--dsw-alias-border-l2, #31373F); margin: 0 16px; padding-bottom: 8px; }
+.jm-cfg-field { flex-direction: column; gap: 6px; padding: 12px 0; display: flex; }
+.jm-cfg-field + .jm-cfg-field { border-top: 1px solid var(--dsw-alias-border-l2, #31373F); }
+.jm-cfg-head { align-items: center; gap: 8px; display: flex; }
+.jm-cfg-label { min-width: 0; color: var(--dsw-alias-label-primary, #E4E8ED); flex: 1; font-size: 13px; font-weight: 500; line-height: 1.5; }
+.jm-cfg-hint { color: var(--dsw-alias-label-caption, #7A828C); margin: 0; font-size: 12px; line-height: 1.5; }
+.jm-cfg-input { border: 1px solid var(--dsw-alias-border-l2, #31373F); background: var(--dsw-alias-bg-layer-3, #14171B); height: 34px; font: inherit; color: var(--dsw-alias-label-primary, #E4E8ED); border-radius: 8px; padding: 0 12px; font-size: 13px; line-height: 1.5; width: 100%; box-sizing: border-box; }
+.jm-cfg-input:focus-visible { border-color: var(--dsw-alias-brand-primary, #5B8DB8); outline: none; }
+.jm-cfg-input:disabled { color: var(--dsw-alias-label-caption, #7A828C); cursor: default; }
+.jm-cfg-check { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; }
+.jm-cfg-check input { accent-color: var(--dsw-alias-state-business-primary, #5B8DB8); }
+.jm-cfg-check .jm-cfg-label { flex: none; }
+.jm-cfg-textarea { width: 100%; box-sizing: border-box; background: var(--dsw-alias-bg-layer-3, #14171B); border: 1px solid var(--dsw-alias-border-l2, #31373F); color: var(--dsw-alias-label-primary, #E4E8ED); border-radius: 8px; padding: 8px 12px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; line-height: 1.6; resize: vertical; }
+.jm-cfg-textarea:focus-visible { border-color: var(--dsw-alias-brand-primary, #5B8DB8); outline: none; }
+.jm-cfg-mini { font: inherit; color: var(--dsw-alias-label-caption, #C9CFD6); cursor: pointer; background: none; border: none; padding: 0; font-size: 12px; line-height: 1.5; flex: none; }
+.jm-cfg-mini:hover:not(:disabled) { color: var(--dsw-alias-label-primary, #E4E8ED); }
+.jm-cfg-footer { border-top: 1px solid var(--dsw-alias-border-l2, #31373F); justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 0 4px; display: flex; }
+.jm-cfg-msg { min-width: 0; flex: 1; margin: 0; font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-caption, #7A828C); }
+.jm-cfg-msg-err { color: var(--dsw-alias-label-error, #cc6666); }
+.jm-cfg-discard, .jm-cfg-save { appearance: none; font: inherit; cursor: pointer; border: 1px solid transparent; border-radius: 8px; padding: 5px 14px; font-size: 13px; line-height: 1.5; }
+.jm-cfg-discard { border-color: var(--dsw-alias-border-l2, #31373F); color: var(--dsw-alias-label-caption, #C9CFD6); background: none; }
+.jm-cfg-discard:hover:not(:disabled) { color: var(--dsw-alias-label-primary, #E4E8ED); border-color: var(--dsw-alias-label-dimmed, #5c646e); }
+.jm-cfg-save { background: var(--dsw-alias-label-primary, #E4E8ED); color: var(--dsw-alias-bg-layer-3, #14171B); }
+.jm-cfg-discard:disabled, .jm-cfg-save:disabled { opacity: .4; cursor: default; }
+.jm-cfg-discard:focus-visible, .jm-cfg-save:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #5B8DB8); outline-offset: 1px; }
+`
+
+    const CHEVRON_SVG = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.25 7 8.75l3.5-3.5"/></svg>'
+
+    const CLOCK_SVG = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><polyline points="8 4.75 8 8 10.5 9.25"/></svg>'
+
+    function injectCss(css) {
+      const el = document.createElement('style')
+      el.setAttribute('data-plugin-css', 'dsh-memory')
+      el.textContent = css
+      document.head.appendChild(el)
+      return () => el.remove()
+    }
+
+    function fetchJson(params) {
+      const qs = Object.keys(params)
+        .map((k) => encodeURIComponent(k) + '=' + encodeURIComponent(String(params[k] === undefined ? '' : params[k])))
+        .join('&')
+      return fetch('/api/memory?' + qs).then((r) => r.json())
+    }
+
+    function esc(s) {
+      return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    }
+
+    function tagClass(tag) {
+      if (tag === 'research' || tag === 'personal') return 'jm-tag-purple'
+      if (tag === 'maintenance' || tag === 'cli-tools') return 'jm-tag-green'
+      if (tag === 'investment' || tag === 'finance' || tag === 'todo' || tag === 'todos') return 'jm-tag-orange'
+      return ''
+    }
+
+    function extOf(src) {
+      const base = String(src).split('/').pop() || ''
+      const i = base.lastIndexOf('.')
+      return i >= 0 ? base.slice(i + 1).toUpperCase().slice(0, 5) : 'MD'
+    }
+
+    function chipsHtml(sources, fallback) {
+      const list = sources && sources.length ? sources : (fallback ? [fallback] : [])
+      return list.map((s) => '<span class="jm-chip">' + esc(s) + '<span class="jm-ext">' + esc(extOf(s)) + '</span></span>').join('')
+    }
+
+    function ymLabel(ym) {
+      return '20' + ym.slice(0, 2) + '年' + parseInt(ym.slice(2), 10) + '月'
+    }
+
+    function monthRange(journals) {
+      if (!journals || journals.length === 0) return ''
+      const first = journals[0].ym
+      const last = journals[journals.length - 1].ym
+      if (first === last) return ymLabel(first)
+      return '20' + first.slice(0, 2) + ' 年 ' + parseInt(first.slice(2), 10) + '–' + parseInt(last.slice(2), 10) + ' 月'
+    }
+
+    function stripFrontmatter(text) {
+      const m = /^---\s*\n[\s\S]*?\n---\s*\n?/.exec(text || '')
+      return m ? text.slice(m[0].length) : text
+    }
+
+    // 预览里标题已在顶栏显示，正文开头与标题相同的 H1 去掉，避免重复
+    function stripLeadingH1(text, title) {
+      const m = /^#\s+(.+?)\s*(?:\n|$)/.exec(text || '')
+      if (m && title && m[1].trim() === String(title).trim()) return text.slice(m[0].length)
+      return text
+    }
+
+    function inlineHtml(text) {
+      return esc(text).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code class="jm-code">$1</code>')
+    }
+
+    // 单条目 memo：mdHtml 是纯函数且同一文档会被多次渲染（seg 切换 / 重绘），
+    // 同一文本不重复解析（条目有界：只记住最后一次输入）
+    let mdHtmlMemoKey
+    let mdHtmlMemoValue
+    function mdHtml(text) {
+      const src = String(text || '')
+      if (mdHtmlMemoKey === src) return mdHtmlMemoValue
+      const lines = src.split('\n')
+      let html = ''
+      let i = 0
+      let inList = false
+      let inCode = false
+      const codeBuf = []
+      while (i < lines.length) {
+        const line = lines[i]
+        if (line.startsWith('```')) {
+          if (inCode) { html += '<pre class="jm-pre">' + esc(codeBuf.join('\n')) + '</pre>'; inCode = false; codeBuf.length = 0 }
+          else inCode = true
+          i++
+          continue
+        }
+        if (inCode) { codeBuf.push(line); i++; continue }
+        const h = /^(#{1,3})\s+(.*)$/.exec(line)
+        if (h) { if (inList) { html += '</ul>'; inList = false } html += '<h' + h[1].length + ' class="jm-h' + h[1].length + '">' + inlineHtml(h[2]) + '</h' + h[1].length + '>'; i++; continue }
+        if (/^\s*-\s+/.test(line)) { if (!inList) { html += '<ul class="jm-ul">'; inList = true } html += '<li class="jm-li">' + inlineHtml(line.replace(/^\s*-\s+/, '')) + '</li>'; i++; continue }
+        if (inList) { html += '</ul>'; inList = false }
+        if (line.trim().startsWith('|')) {
+          const rows = []
+          while (i < lines.length && lines[i].trim().startsWith('|')) {
+            const cells = lines[i].trim().split('|').slice(1, -1).map((c) => c.trim())
+            if (!cells.every((c) => /^:?-{2,}:?$/.test(c))) rows.push(cells)
+            i++
+          }
+          if (rows.length > 1) {
+            html += '<table class="jm-table"><thead><tr>' + rows[0].map((c) => '<th>' + inlineHtml(c) + '</th>').join('') + '</tr></thead><tbody>' + rows.slice(1).map((r) => '<tr>' + r.map((c) => '<td>' + inlineHtml(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table>'
+          }
+          continue
+        }
+        if (/^>\s?/.test(line)) { html += '<blockquote class="jm-quote">' + inlineHtml(line.replace(/^>\s?/, '')) + '</blockquote>'; i++; continue }
+        if (line.trim() === '') { i++; continue }
+        html += '<p class="jm-p">' + inlineHtml(line) + '</p>'
+        i++
+      }
+      if (inList) html += '</ul>'
+      if (inCode) html += '<pre class="jm-pre">' + esc(codeBuf.join('\n')) + '</pre>'
+      mdHtmlMemoKey = src
+      mdHtmlMemoValue = html
+      return html
+    }
+
+    // 列表渐进渲染：每批追加的分组数（先渲染前 3 组，哨兵进入视口再追加 3 组）
+    const PAGE_SIZE = 3
+    const state = { tab: 'journal', data: null, loading: false, error: '', selected: null, doc: null, docLoading: false, seg: 'preview', query: '', shown: PAGE_SIZE, kbIndex: -1 }
+    let panelRoot = null
+    let panelCleanup = null
+    let pageObserver = null       // 哨兵的 IntersectionObserver（每轮重绘前卸载）
+    let pageScrollCleanup = null  // 无 IO 时滚动监听降级的清理函数
+    let searchFocusPending = false // innerHTML 全量重绘后要把焦点还给搜索框
+    let searchTimer = null         // 搜索 debounce 定时器（面板关闭时清理，避免关闭后空触发）
+
+    function measureSidebarWidth() {
+      const col = document.querySelector('[class*="_sidebarCol"]')
+      if (col !== null && typeof col.getBoundingClientRect === 'function') {
+        const w = Math.round(col.getBoundingClientRect().width)
+        if (w > 40) return w
+      }
+      const anchor = document.querySelector('[class*="_newSession"]')
+      if (anchor !== null && typeof anchor.getBoundingClientRect === 'function') {
+        const r = anchor.getBoundingClientRect()
+        return Math.max(56, Math.round(r.left + r.width + 12))
+      }
+      return 260
+    }
+
+    function grouped(list, keyOf) {
+      const groups = []
+      const index = {}
+      for (const item of list) {
+        const key = keyOf(item)
+        if (index[key] === undefined) { index[key] = groups.length; groups.push({ key, items: [] }) }
+        groups[index[key]].items.push(item)
+      }
+      return groups
+    }
+
+    // ── 列表搜索（纯前端过滤，index 数据已在内存）──
+
+    function matchQuery(item, q) {
+      // q 为已小写的关键词；命中 标题 + 摘要 + 标签 拼成的文本即可（日志与画像字段同构）
+      const it = item || {}
+      const tags = Array.isArray(it.tags) ? it.tags : []
+      const hay = (String(it.title || '') + '\n' + String(it.summary || '') + '\n' + tags.join(' ')).toLowerCase()
+      return hay.indexOf(q) !== -1
+    }
+
+    function filterItems(list, query) {
+      // 空白分隔的多个关键词取交集（AND）；整体大小写不敏感
+      if (!Array.isArray(list)) return []
+      const words = String(query === undefined || query === null ? '' : query).trim().toLowerCase().split(/\s+/).filter((w) => w !== '')
+      if (words.length === 0) return list
+      return list.filter((it) => words.every((w) => matchQuery(it, w)))
+    }
+
+    // ── 列表渲染辅助（过滤 + 分页 + 键盘高亮共用一套顺序） ──
+
+    // 当前列表模式下可见（过滤后）的条目，键盘导航按这个顺序移动
+    function visibleItems() {
+      if (!state.data || !state.data.ok) return []
+      const list = state.tab === 'journal' ? state.data.journals : state.data.personas
+      return filterItems(list, state.query)
+    }
+
+    function currentGroups(visible) {
+      return grouped(visible, state.tab === 'journal' ? (j) => j.ym : (p) => p.region)
+    }
+
+    function journalCard(j, kbMap) {
+      const kb = state.kbIndex >= 0 && kbMap[j.rel] === state.kbIndex
+      return '<div class="jm-card' + (kb ? ' jm-kb-active' : '') + '" data-jm-rel="' + esc(j.rel) + '"' + (kb ? ' data-jm-kb="1"' : '') + '>'
+        + '<div class="jm-card-top"><span class="jm-num">' + esc(String(j.day || 1)) + '</span><span class="jm-title">' + esc(j.title) + '</span>' + (j.tags[0] ? '<span class="jm-tag ' + tagClass(j.tags[0]) + '">' + esc(j.tags[0]) + '</span>' : '') + '</div>'
+        + '<div class="jm-excerpt">' + esc(j.summary || '') + '</div>'
+        + '<div class="jm-foot">' + chipsHtml(j.sources, j.tags[0]) + '</div></div>'
+    }
+
+    function personaCard(p, kbMap) {
+      const kb = state.kbIndex >= 0 && kbMap[p.rel] === state.kbIndex
+      return '<div class="jm-card jm-card-tall' + (kb ? ' jm-kb-active' : '') + '" data-jm-rel="' + esc(p.rel) + '"' + (kb ? ' data-jm-kb="1"' : '') + '>'
+        + '<div class="jm-card-top"><span class="jm-num">' + esc((p.title || '?').slice(0, 1)) + '</span><span class="jm-title">' + esc(p.title) + '</span>' + p.tags.slice(0, 3).map((t) => '<span class="jm-role">' + esc(t) + '</span>').join('') + '</div>'
+        + '<div class="jm-excerpt">' + esc(p.summary || '') + '</div>'
+        + '<div class="jm-foot"><span class="jm-chip">identity<span class="jm-ext">MD</span></span></div></div>'
+    }
+
+    // 列表正文：渐进渲染 —— 只画前 state.shown 个分组，还有剩时末尾放哨兵
+    function listBodyHtml(visible) {
+      const groups = currentGroups(visible)
+      const kbMap = {}
+      visible.forEach((it, i) => { kbMap[it.rel] = i })
+      const cardOf = state.tab === 'journal' ? (x) => journalCard(x, kbMap) : (x) => personaCard(x, kbMap)
+      const labelOf = state.tab === 'journal' ? (g) => ymLabel(g.key) : (g) => g.key
+      let html = groups.slice(0, state.shown).map((g) => '<div><div class="jm-month">' + esc(labelOf(g)) + '</div><div class="jm-grid">' + g.items.map(cardOf).join('') + '</div></div>').join('')
+      if (groups.length > state.shown) {
+        html += '<div class="jm-more" data-jm-sentinel="1">载入更多…（还有 ' + (groups.length - state.shown) + ' 组）</div>'
+      }
+      return html
+    }
+
+    // ── 渐进渲染：哨兵进入视口 → 追加下一批分组 ──
+
+    function detachPaging() {
+      if (pageObserver !== null) { pageObserver.disconnect(); pageObserver = null }
+      if (pageScrollCleanup !== null) { pageScrollCleanup(); pageScrollCleanup = null }
+    }
+
+    function attachSentinel() {
+      if (panelRoot === null) return
+      const sentinel = panelRoot.querySelector('[data-jm-sentinel]')
+      if (sentinel === null) return
+      const more = () => {
+        if (panelRoot === null) return
+        if (panelRoot.querySelector('[data-jm-sentinel]') === null) return // 已被别的路径重绘
+        state.shown += PAGE_SIZE
+        renderPanel()
+      }
+      if (typeof IntersectionObserver !== 'undefined') {
+        // 首选：IntersectionObserver 盯哨兵（以列表滚动容器为根）
+        const root = typeof sentinel.closest === 'function' ? sentinel.closest('.jm-scroll') : null
+        pageObserver = new IntersectionObserver((entries) => {
+          if (entries.some((en) => en.isIntersecting)) more()
+        }, { root: root === null ? undefined : root, rootMargin: '200px' })
+        pageObserver.observe(sentinel)
+        return
+      }
+      // 降级一：滚动监听（容器没有就监听 window）
+      const scroller = typeof sentinel.closest === 'function' ? sentinel.closest('.jm-scroll') : null
+      const target = scroller !== null && typeof scroller.addEventListener === 'function' ? scroller : (typeof window !== 'undefined' && typeof window.addEventListener === 'function' ? window : null)
+      if (target === null) {
+        // 降级二：连滚动监听都挂不上 → 直接全量渲染
+        state.shown = Infinity
+        renderPanel()
+        return
+      }
+      const onScroll = () => {
+        if (panelRoot === null) return
+        const s = panelRoot.querySelector('[data-jm-sentinel]')
+        if (s === null || typeof s.getBoundingClientRect !== 'function') return
+        const limit = target === window ? (window.innerHeight || 800) : (target.clientHeight || 800)
+        if (s.getBoundingClientRect().top < limit + 200) more()
+      }
+      target.addEventListener('scroll', onScroll, { passive: true })
+      pageScrollCleanup = () => target.removeEventListener('scroll', onScroll)
+    }
+
+    // ── 键盘导航 ──
+
+    // 焦点落在表单元素（设置卡片输入框、按钮等）里时不劫持按键；搜索框由调用方豁免
+    function isFormTarget(t) {
+      if (t === null || t === undefined || t === panelRoot) return false
+      const tag = String(t.tagName || '').toUpperCase()
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return true
+      if (t.isContentEditable === true) return true
+      return false
+    }
+
+    function moveKb(dir) {
+      const visible = visibleItems()
+      if (visible.length === 0) return
+      let next = state.kbIndex + dir
+      if (next < 0) next = 0
+      if (next > visible.length - 1) next = visible.length - 1
+      if (next === state.kbIndex) return
+      state.kbIndex = next
+      // 高亮条目可能落在尚未渲染的分组里：先把分页扩到包含它的那一组
+      const groups = currentGroups(visible)
+      const item = visible[next]
+      for (let gi = 0; gi < groups.length; gi++) {
+        if (groups[gi].items.indexOf(item) !== -1) {
+          if (gi >= state.shown) state.shown = Math.ceil((gi + 1) / PAGE_SIZE) * PAGE_SIZE
+          break
+        }
+      }
+      renderPanel()
+      const el = panelRoot !== null ? panelRoot.querySelector('[data-jm-kb]') : null
+      if (el !== null && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' })
+    }
+
+    function openHighlighted() {
+      const visible = visibleItems()
+      if (state.kbIndex < 0 || state.kbIndex >= visible.length) return
+      openCard(visible[state.kbIndex].rel)
+    }
+
+    function clearQuery() {
+      state.query = ''
+      state.shown = PAGE_SIZE
+      state.kbIndex = -1
+      searchFocusPending = true
+      renderPanel()
+    }
+
+    // innerHTML 全量重绘会丢焦点：把焦点和光标还给搜索框
+    function focusSearch() {
+      if (panelRoot === null) return
+      const inp = panelRoot.querySelector('[data-jm-search]')
+      if (inp === null || typeof inp.focus !== 'function') return
+      inp.focus()
+      const pos = String(inp.value || '').length
+      if (typeof inp.setSelectionRange === 'function') {
+        try { inp.setSelectionRange(pos, pos) } catch { /* 某些 input 类型不支持 setSelectionRange */ }
+      }
+    }
+
+    function openCard(rel) {
+      state.selected = rel
+      state.doc = null
+      state.docLoading = true
+      state.seg = 'preview'
+      renderPanel()
+      fetchJson({ action: 'read', rel })
+        .then((r) => { if (r && r.ok) state.doc = r; else state.doc = { rel, text: '', error: (r && r.reason) || '读取失败' } })
+        .catch((e) => { state.doc = { rel, text: '', error: String((e && e.message) || e) } })
+        .finally(() => { state.docLoading = false; renderPanel() })
+    }
+
+    function renderPanel() {
+      if (panelRoot === null) return
+      detachPaging() // innerHTML 全量重绘前，先卸掉上一轮哨兵的观察器
+      const journals = state.data && state.data.ok ? state.data.journals : []
+      const personas = state.data && state.data.ok ? state.data.personas : []
+      const selItem = state.selected ? (journals.find((j) => j.rel === state.selected) || personas.find((p) => p.rel === state.selected)) : null
+      const count = state.tab === 'journal'
+        ? journals.length + ' 条 · ' + monthRange(journals)
+        : personas.length + ' 个画像 · ' + grouped(personas, (p) => p.region).length + ' 个分组'
+
+      let bodyHtml = ''
+      if (state.selected) {
+        bodyHtml = '<div class="jm-view jm-split">'
+          + '<div class="jm-preview">'
+          + (state.docLoading ? '<div class="jm-loading">加载中…</div>' : '<div class="jm-pbody">'
+            + (state.seg === 'source'
+              ? '<pre class="jm-pre">' + esc(state.doc ? state.doc.text : '') + '</pre>'
+              : (selItem ? '<p class="jm-psummary">' + esc(selItem.summary) + '</p><div class="jm-pchips">' + chipsHtml(selItem.sources, selItem.tags[0]) + '</div>' : '') + (state.doc && state.doc.error ? '<div class="jm-empty">' + esc(state.doc.error) + '</div>' : mdHtml(stripLeadingH1(stripFrontmatter(state.doc ? state.doc.text : ''), selItem ? selItem.title : ''))))
+            + '</div>')
+          + '</div>'
+          + '<div class="jm-list">' + grouped(journals, (j) => j.ym).map((g) => '<div><div class="jm-lp-month">⌄ ' + esc(ymLabel(g.key)) + '</div>' + g.items.map((j) => '<div class="jm-lp-item' + (j.rel === state.selected ? ' jm-active' : '') + '" data-jm-rel="' + esc(j.rel) + '"><div class="jm-lp-row"><span class="jm-num">' + esc(String(j.day || 1)) + '</span><span class="jm-lp-t">' + esc(j.title) + '</span>' + (j.tags[0] ? '<span class="jm-tag ' + tagClass(j.tags[0]) + '">' + esc(j.tags[0]) + '</span>' : '') + '</div><div class="jm-lp-ex">' + esc(j.summary || '') + '</div></div>').join('') + '</div>').join('') + '</div>'
+          + '</div>'
+      } else {
+        // 列表模式：搜索过滤 + 分月/分区分组渐进渲染；query 与 tab 无关地生效
+        const visible = visibleItems()
+        const hasQuery = String(state.query).trim() !== ''
+        const inner = visible.length === 0
+          ? '<div class="jm-empty' + (hasQuery ? ' jm-empty-search">没有匹配的条目' : '">暂无内容') + '</div>'
+          : listBodyHtml(visible)
+        bodyHtml = '<div class="jm-view"><div class="jm-scroll">' + inner + '</div></div>'
+      }
+
+      const topbarHtml = state.selected
+        ? '<div class="jm-topbar jm-topbar-detail">'
+          + '<button class="jm-close" data-jm-act="back">‹ 返回列表</button>'
+          + '<span class="jm-dtitle">' + esc(selItem ? selItem.title : '') + '</span>'
+          + '<div class="jm-topbar-right"><div class="jm-seg"><span data-jm-act="seg-preview" class="' + (state.seg === 'preview' ? 'jm-on' : '') + '">◉ 预览</span><span data-jm-act="seg-source" class="' + (state.seg === 'source' ? 'jm-on' : '') + '"></> 源码</span></div>'
+          + '<button class="jm-close" data-jm-act="close">× 关闭</button></div></div>'
+        : '<div class="jm-topbar">'
+          + '<div class="jm-switch"><span data-jm-act="tab-journal" class="' + (state.tab === 'journal' ? 'jm-on' : '') + '">日志</span><span data-jm-act="tab-persona" class="' + (state.tab === 'persona' ? 'jm-on' : '') + '">画像</span></div>'
+          + '<div class="jm-topbar-right"><span class="jm-count">' + esc(count) + '</span>'
+          + '<button class="jm-close" data-jm-act="close">× 关闭</button></div></div>'
+      // 列表模式：顶栏下方全宽搜索框（详情模式不显示）
+      const searchHtml = state.selected ? '' : '<div class="jm-searchwrap"><input class="jm-search" type="text" data-jm-search="1" value="' + esc(state.query) + '" placeholder="搜索标题 / 摘要 / 标签…" spellcheck="false" aria-label="搜索记忆条目" /></div>'
+      panelRoot.innerHTML = topbarHtml
+        + searchHtml
+        + (state.loading ? '<div class="jm-loading">加载中…</div>' : (state.error ? '<div class="jm-empty">' + esc(state.error) + '</div>' : bodyHtml))
+
+      for (const node of Array.from(panelRoot.querySelectorAll('[data-jm-act]'))) {
+        node.addEventListener('click', () => {
+          const act = node.getAttribute('data-jm-act')
+          if (act === 'close') return closePanel()
+          if (act === 'back') { state.selected = null; state.doc = null; return renderPanel() }
+          // 切 tab：query 保留，分页与键盘高亮重置
+          if (act === 'tab-journal') { state.tab = 'journal'; state.shown = PAGE_SIZE; state.kbIndex = -1; return renderPanel() }
+          if (act === 'tab-persona') { state.tab = 'persona'; state.shown = PAGE_SIZE; state.kbIndex = -1; return renderPanel() }
+          if (act === 'seg-preview') { state.seg = 'preview'; return renderPanel() }
+          if (act === 'seg-source') { state.seg = 'source'; return renderPanel() }
+        })
+      }
+      for (const node of Array.from(panelRoot.querySelectorAll('[data-jm-rel]'))) {
+        node.addEventListener('click', () => openCard(node.getAttribute('data-jm-rel')))
+      }
+      const searchInput = panelRoot.querySelector('[data-jm-search]')
+      if (searchInput !== null) {
+        searchInput.addEventListener('input', () => {
+          state.query = searchInput.value
+          state.shown = PAGE_SIZE
+          state.kbIndex = -1
+          searchFocusPending = true
+          if (searchTimer) clearTimeout(searchTimer)
+          searchTimer = setTimeout(() => { searchTimer = null; renderPanel() }, 150)
+        })
+      }
+      if (!state.loading && !state.error && state.selected === null) attachSentinel()
+      if (searchFocusPending) { searchFocusPending = false; focusSearch() }
+    }
+
+    function openPanel() {
+      if (panelRoot !== null) { focusSearch(); return }
+      panelRoot = document.createElement('div')
+      panelRoot.className = 'jm-overlay'
+      panelRoot.setAttribute('tabindex', '-1')
+      panelRoot.style.left = measureSidebarWidth() + 'px'
+      panelRoot.addEventListener('keydown', (e) => {
+        const t = e.target
+        const inSearch = t !== null && t !== undefined && t !== panelRoot && typeof t.closest === 'function' && t.closest('[data-jm-search]') !== null
+        if (e.key === 'Escape') {
+          // Esc 优先级：清搜索词 → 详情返回列表 → 关闭面板
+          if (!state.selected && inSearch && String(state.query) !== '') return clearQuery()
+          if (state.selected) { state.selected = null; state.doc = null; renderPanel() } else closePanel()
+          return
+        }
+        if (state.selected) return // 详情模式只响应 Esc（返回列表）
+        // 焦点在表单元素里不劫持（搜索框例外：↑↓/Enter 依然导航结果）
+        if (!inSearch && isFormTarget(t)) return
+        if (e.key === 'ArrowDown') { e.preventDefault(); moveKb(1); return }
+        if (e.key === 'ArrowUp') { e.preventDefault(); moveKb(-1); return }
+        if (e.key === 'Enter') { e.preventDefault(); openHighlighted(); return }
+      })
+      document.body.appendChild(panelRoot)
+      // 侧栏宽度随 DOM 变化(折叠/主题等)。MutationObserver 全文档监听会随流式
+      // 文本每帧触发多次:rAF 合帧后每帧最多一次定位,且宽度未变时跳过样式写入。
+      let resizeRaf = 0
+      let lastSidebarWidth = -1
+      const applySidebarWidth = () => {
+        if (panelRoot === null) return
+        const w = measureSidebarWidth()
+        if (w === lastSidebarWidth) return
+        lastSidebarWidth = w
+        panelRoot.style.left = w + 'px'
+      }
+      const onResize = () => {
+        if (resizeRaf) return
+        resizeRaf = requestAnimationFrame(() => { resizeRaf = 0; applySidebarWidth() })
+      }
+      const observer = typeof MutationObserver !== 'undefined' ? new MutationObserver(onResize) : null
+      if (observer !== null) observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] })
+      window.addEventListener('resize', onResize)
+      const onDocClick = (e) => {
+        if (panelRoot === null) return
+        const t = e.target
+        if (t && typeof t.closest === 'function') {
+          if (t.closest('[data-mm-nav]') !== null) return
+          if (t.closest('[class*="_sidebarCol"]') !== null) closePanel()
+        }
+      }
+      document.addEventListener('click', onDocClick, true)
+      panelCleanup = () => {
+        if (observer !== null) observer.disconnect()
+        window.removeEventListener('resize', onResize)
+        document.removeEventListener('click', onDocClick, true)
+        if (resizeRaf) { cancelAnimationFrame(resizeRaf); resizeRaf = 0 }
+      }
+      state.loading = true
+      renderPanel()
+      fetchJson({ action: 'index' })
+        .then((r) => {
+          if (r && r.ok) { state.data = r; state.error = '' }
+          else { state.error = (r && (r.reason || r.error)) || '加载失败' }
+        })
+        .catch((e) => { state.error = String((e && e.message) || e) })
+        .finally(() => { state.loading = false; renderPanel() })
+      if (panelRoot !== null && typeof panelRoot.focus === 'function') panelRoot.focus()
+      focusSearch() // 打开即聚焦搜索框，可直接输入（焦点在输入框里，keydown 冒泡到面板照常导航）
+    }
+
+    function closePanel() {
+      if (panelCleanup !== null) { panelCleanup(); panelCleanup = null }
+      detachPaging()
+      if (panelRoot !== null) { panelRoot.remove(); panelRoot = null; state.selected = null; state.doc = null }
+      // 面板关闭时重置搜索词与分页、键盘高亮
+      state.query = ''
+      state.shown = PAGE_SIZE
+      state.kbIndex = -1
+      searchFocusPending = false
+      if (searchTimer) { clearTimeout(searchTimer); searchTimer = null }
+    }
+
+    /**
+     * 把「记忆」按钮插入到 New Session 按钮正下方（shell 私有 DOM，无官方槽位）。
+     * 学习手册 8.5 的最后手段配方：语义后缀选择器 + MutationObserver 兜底；
+     * 样式经 getComputedStyle 从锚点逐属性拷贝内联，与「新会话」幽灵按钮一致。
+     */
+    const COPY_PROPS = ['alignItems', 'background', 'border', 'borderRadius', 'boxSizing', 'color', 'display', 'fontFamily', 'fontSize', 'fontWeight', 'gap', 'height', 'justifyContent', 'letterSpacing', 'lineHeight', 'margin', 'padding', 'width', 'flex']
+
+    function mountNavButton(onOpen) {
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'jm-newsession'
+      btn.setAttribute('title', '记忆')
+      btn.setAttribute('data-mm-nav', '1')
+      btn.addEventListener('click', onOpen)
+      const icon = document.createElement('span')
+      icon.className = 'jm-nav-icon'
+      icon.innerHTML = CLOCK_SVG
+      const label = document.createElement('span')
+      label.className = 'jm-newlabel'
+      label.textContent = '记忆'
+      btn.appendChild(icon)
+      btn.appendChild(label)
+
+      let attached = false
+      const syncStyle = (anchor) => {
+        if (!anchor || typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') return
+        const cs = window.getComputedStyle(anchor)
+        for (const p of COPY_PROPS) {
+          if (cs[p] !== undefined && cs[p] !== '') btn.style[p] = cs[p]
+        }
+        btn.classList.toggle('jm-rail', anchor.getBoundingClientRect().width <= 40)
+      }
+      let attachedAnchor = null
+      const attach = () => {
+        const anchor = document.querySelector('[class*="_newSession"]')
+        for (const old of Array.from(document.querySelectorAll('[data-mm-nav]'))) {
+          if (old !== btn) old.remove()
+        }
+        if (anchor !== null && !attached) {
+          anchor.insertAdjacentElement('afterend', btn)
+          attached = true
+        }
+        attachedAnchor = anchor
+        syncStyle(anchor)
+      }
+      // 观察器:纯 childList 变更(流式文本等)且按钮与锚点都还在原处 → 零动作;
+      // class 属性变化(侧栏折叠/主题)、锚点被替换、按钮被摘除 → rAF 合帧后重同步。
+      let attachRaf = 0
+      const observer = new MutationObserver((records) => {
+        const attrChanged = records.some((r) => r.type === 'attributes')
+        if (!attrChanged && attached && document.contains(btn) && attachedAnchor !== null && document.contains(attachedAnchor)) return
+        if (attachRaf) return
+        attachRaf = requestAnimationFrame(() => {
+          attachRaf = 0
+          if (attached && !document.contains(btn)) attached = false
+          attach()
+        })
+      })
+      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] })
+      const onResize = () => attach()
+      window.addEventListener('resize', onResize)
+      attach()
+      return () => {
+        observer.disconnect()
+        if (attachRaf) { cancelAnimationFrame(attachRaf); attachRaf = 0 }
+        window.removeEventListener('resize', onResize)
+        if (btn.parentNode) btn.parentNode.removeChild(btn)
+      }
+    }
+
+    // ── 「设置 → 插件配置」卡片（React 由 shell 共享；纯 createElement，无需编译） ──
+    function normalizeDraft(c) {
+      return {
+        startupContext: !!c.startupContext,
+        autoMemory: !!c.autoMemory,
+        maxEntries: String(c.maxEntries),
+        maxPersonas: String(c.maxPersonas),
+        maxBytes: String(c.maxBytes),
+      }
+    }
+
+    function ConfigCard() {
+      const h = React.createElement
+      const [open, setOpen] = React.useState(false)
+      const [draft, setDraft] = React.useState(null)
+      const [saved, setSaved] = React.useState(null)
+      const [meta, setMeta] = React.useState(null)
+      const [msg, setMsg] = React.useState(null) // { kind: 'ok' | 'err', text }
+      const [busy, setBusy] = React.useState(false)
+
+      React.useEffect(() => { reload() }, [])
+
+      function reload() {
+        setMsg(null)
+        fetchJson({ action: 'config' })
+          .then((r) => {
+            if (r && r.ok) {
+              setMeta({ defaults: r.defaults, file: r.file })
+              const d = normalizeDraft(r.config)
+              setDraft(d)
+              setSaved(d)
+            } else setMsg({ kind: 'err', text: '加载失败：' + ((r && r.reason) || '未知错误') })
+          })
+          .catch((e) => setMsg({ kind: 'err', text: '加载失败：' + String((e && e.message) || e) }))
+      }
+
+      const dirty = draft !== null && saved !== null && JSON.stringify(draft) !== JSON.stringify(saved)
+      const numOk = (s) => /^\d+$/.test(String(s).trim())
+      const invalid = draft !== null && !['maxEntries', 'maxPersonas', 'maxBytes'].every((k) => numOk(draft[k]))
+
+      function edit(key, value) {
+        setDraft({ ...draft, [key]: value })
+        setMsg(null)
+      }
+
+      function save() {
+        if (!dirty || invalid || busy) return
+        const payload = {
+          startupContext: draft.startupContext,
+          autoMemory: draft.autoMemory,
+          maxEntries: Number(draft.maxEntries),
+          maxPersonas: Number(draft.maxPersonas),
+          maxBytes: Number(draft.maxBytes),
+        }
+        setBusy(true)
+        setMsg(null)
+        fetch('/api/memory?action=config', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then((r) => r.json())
+          .then((r) => {
+            if (r && r.ok) {
+              const d = normalizeDraft(r.config)
+              setDraft(d)
+              setSaved(d)
+              setMsg({ kind: 'ok', text: '已保存 ✓ 新会话立即生效' })
+            } else setMsg({ kind: 'err', text: '保存失败：' + ((r && r.reason) || '未知错误') })
+          })
+          .catch((e) => setMsg({ kind: 'err', text: '保存失败：' + String((e && e.message) || e) }))
+          .finally(() => setBusy(false))
+      }
+
+      function discard() {
+        setDraft(saved)
+        setMsg(null)
+      }
+
+      function boolRow(labelText, hint, key) {
+        return h('div', { className: 'jm-cfg-field', key },
+          h('div', { className: 'jm-cfg-head' },
+            h('label', { className: 'jm-cfg-check' },
+              h('input', { type: 'checkbox', checked: draft[key], disabled: busy, onChange: (e) => edit(key, e.target.checked) }),
+              h('span', { className: 'jm-cfg-label' }, labelText))),
+          h('p', { className: 'jm-cfg-hint' }, hint))
+      }
+
+      function numRow(labelText, hint, key) {
+        return h('div', { className: 'jm-cfg-field', key },
+          h('div', { className: 'jm-cfg-head' },
+            h('span', { className: 'jm-cfg-label' }, labelText)),
+          h('input', {
+            className: 'jm-cfg-input', type: 'number', value: draft[key], disabled: busy,
+            onChange: (e) => edit(key, e.target.value),
+          }),
+          h('p', { className: 'jm-cfg-hint' }, hint))
+      }
+
+      const header = h('button', {
+        type: 'button',
+        className: 'jm-cfg-header',
+        'aria-expanded': open,
+        'aria-label': (open ? '收起' : '展开') + '：记忆系统',
+        onClick: () => setOpen(!open),
+      },
+        h('span', { className: 'jm-cfg-headtext' },
+          h('span', { className: 'jm-cfg-name' }, '记忆系统'),
+          h('span', { className: 'jm-cfg-desc' }, '双轨文本记忆：流水日志 + 画像实体（memory）')),
+        dirty ? h('span', { className: 'jm-cfg-pending' }, '未保存') : null,
+        h('span', {
+          className: 'jm-cfg-chevron' + (open ? ' jm-cfg-chevron-open' : ''),
+          dangerouslySetInnerHTML: { __html: CHEVRON_SVG },
+        }))
+
+      let body = null
+      if (open) {
+        if (draft === null) {
+          body = h('div', { className: 'jm-cfg-body' },
+            h('div', { className: 'jm-cfg-field' },
+              h('p', { className: 'jm-cfg-hint' }, msg ? msg.text : '加载中…')))
+        } else {
+          body = h('div', { className: 'jm-cfg-body' },
+            boolRow('启动时注入记忆摘要', '每个新会话自动携带「最近日志 + 画像」的摘要快照', 'startupContext'),
+            boolRow('自动记忆', '所有会话自动记录有价值信息（write_memory 工具 + 对话兜底），不需要专属预设', 'autoMemory'),
+            boolRow('自动画像', '自动识别并更新用户/产品/人物画像（名字、职业、偏好、项目等），默认开启', 'autoIdentity'),
+            numRow('摘要日志条数', '启动快照里带多少条最近日志（1–200，默认 20）', 'maxEntries'),
+            numRow('摘要画像条数', '启动快照里带多少条画像（1–500，默认 30）', 'maxPersonas'),
+            numRow('摘要字节上限', '超出后截断并提示（4096–500000，默认 60000）', 'maxBytes'),
+            h('div', { className: 'jm-cfg-field' },
+              h('p', { className: 'jm-cfg-hint' }, '保存写入记忆根目录下的 ' + ((meta && meta.file) || '.memory.json') + '，随记忆库一起迁移；root 目录本身在 profile 的 cordis.patch.yml 里配置。')),
+            h('div', { className: 'jm-cfg-footer' },
+              msg ? h('p', { className: 'jm-cfg-msg' + (msg.kind === 'err' ? ' jm-cfg-msg-err' : ''), role: 'status' }, msg.text) : null,
+              h('button', { type: 'button', className: 'jm-cfg-discard', disabled: !dirty || busy, onClick: discard }, '放弃修改'),
+              h('button', { type: 'button', className: 'jm-cfg-save', disabled: !dirty || invalid || busy, onClick: save }, busy ? '保存中…' : '保存')))
+        }
+      }
+
+      return h('li', { className: 'jm-cfg-card' + (open ? ' jm-cfg-open' : '') }, header, body)
+    }
+
+    exports.name = 'memory'
+    // 内部纯函数出口（下划线开头，仅供冒烟测试直接驱动；不属于对 DSH 暴露的公共 API）
+    exports._internals = { filterItems: filterItems, matchQuery: matchQuery, PAGE_SIZE: PAGE_SIZE }
+    exports.apply = function (ctx) {
+      ctx.effect(() => injectCss(JM_CSS + CFG_CSS), 'memory css')
+      ctx.effect(() => mountNavButton(() => openPanel()), 'memory nav button')
+      // 设置卡片：注册进「设置 → 插件配置」槽位；槽位不存在（未组装设置页）时静默跳过
+      const slots = ctx.get('slots')
+      if (slots !== undefined && React !== null) {
+        slots.inject('settings.plugin.item', () => slots.register(
+          { name: 'settings.plugin.item', key: 'memory', id: 'memory', order: 100 },
+          ConfigCard,
+        ))
+      }
+    }
+
+    return module.exports
+  },
+})

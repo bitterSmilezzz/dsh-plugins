@@ -1,0 +1,38 @@
+{
+  "name": "dsh-core",
+  "version": "0.1.0",
+  "description": "DSH 场景化插件仓库共享工具包：配置合并、去重、哈希、安装器辅助等纯 JS 工具。",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitterSmilezzz/dsh-core.git"
+  },
+  "homepage": "https://github.com/bitterSmilezzz/dsh-core#readme",
+  "bugs": {
+    "url": "https://github.com/bitterSmilezzz/dsh-core/issues"
+  }
+}
