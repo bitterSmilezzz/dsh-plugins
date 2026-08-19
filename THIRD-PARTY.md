@@ -1,9 +1,10 @@
 # THIRD-PARTY.md — 第三方插件治理：fork / 收编与本地修改追踪
 
 **2026-08-19 架构定型 v3（自研独立 / 技能合并 / 第三方独立）**：自研 bundle 插件拆为
-6 个独立仓库（`dsh-core`/`dsh-essentials`/`dsh-memory`/`dsh-visualize`/
-`dsh-ui-tweaks`/`dsh-work`），技能包保持 `dsh-skills` 3 子包合并仓，第三方 fork
-保持独立。来源真相见 `plugins.json`（schema 3，技能子包含 `path`）。治理口径：
+5 个独立仓库（`dsh-core`/`dsh-memory`/`dsh-visualize`/`dsh-ui-tweaks`/
+`dsh-work`；`dsh-essentials` 已于 2026-08-19 并入 dsh-ui-tweaks，路由预设删除），
+技能包保持 `dsh-skills` 3 子包合并仓，第三方 fork 保持独立。来源真相见
+`plugins.json`（schema 3，技能子包含 `path`）。治理口径：
 
 - **改过的第三方插件** → **fork 上游仓库**，本地改动提交在 fork 上（不再 `git subtree`
   收编进汇总仓库）；后续上游更新用 `git fetch upstream && git merge upstream/main`，
@@ -18,7 +19,8 @@
 - 安装一律以 `plugins.json` 为真相；同仓库子包用 `&path:/<subdir>` 安装。
 
 > ⚠️ **2026-08-16 变更**：`dsh-at-file`、`dsh-paste-input` 已并入 `dsh-essentials` 组合包
-> （源码在 `dsh-essentials/lib/{at-file,paste-input}/`，不再单独 `subtree pull`）；
+> （源码在 `dsh-essentials/lib/{at-file,paste-input}/`，不再单独 `subtree pull`；
+> 2026-08-19 随 essentials 并入 dsh-ui-tweaks，现位于 `dsh-ui-tweaks/lib/{at-file,paste-input}/`）；
 > 同日后又并入 `@liustack/modlens`（`dsh-essentials/lib/modlens/`，2026-08-16 替换 dsh-vision-any）、
 > `dsh-usage-plugin`（`dsh-essentials/lib/usage-plugin/`）、
 > `dsh-web-ui-notify`（`dsh-essentials/lib/notify/`）、
@@ -47,9 +49,9 @@
 
 | 插件 | 上游 | 许可证 | 本地修改 | 维护状态 |
 | --- | --- | --- | --- | --- |
-| [dsh-essentials（lib/at-file/）](https://github.com/bitterSmilezzz/dsh-essentials) | omdsh-dev/dsh-at-file（**已脱钩**） | MIT | link 路径改 `../../deepseek-harness/`（16 处 devDeps + vitest alias） | **已脱离上游**（2026-08-15 重写历史单作者化；不再 subtree pull；2026-08-16 并入 dsh-essentials） |
-| [dsh-essentials（lib/paste-input/）](https://github.com/bitterSmilezzz/dsh-essentials) | @dsh-community (8⭐，**已脱钩**) | MIT | 文案本地化（`locale`）+ 设置页导航图标（官方回形针 DOM 级替换）+ 遮罩/主按钮 token 化 + 资源优化三轮（mapFiles O(n²)→O(n·maxDepth) 等） | **已脱离上游**（2026-08-15 脱钩，按第一方维护；2026-08-16 并入 dsh-essentials） |
-| [dsh-essentials（upstream/dsh-router-standard/）](https://github.com/bitterSmilezzz/dsh-essentials) | yjh051108/dsh-router-standard（**源仓库**，套装仓库 dsh-routing-suite 已弃用） | MIT | ① 测试 import 路径修复（上游 v0.2.0 拆两预设后 `router.test.mjs` 仍 import 旧路径 → 改 `./preset/router-standard/router-core.mjs`，15 测试全过）② **preset.yml description 加引号 + 中文化**（上游 YAML bug：描述含 `: ` 未加引号 → 设置页显示「无描述」；另按用户要求把两预设描述改为中文）。**preset/ 子目录已删除（与 preset/ 重复），仅保留 probe/ docs/ scripts/** | 跟随上游（2026-08-16 移入 essentials/upstream；**已复制到 dsh-essentials/preset/**，升级需同步复制） |
+| [dsh-ui-tweaks（lib/at-file/）](https://github.com/bitterSmilezzz/dsh-ui-tweaks) | omdsh-dev/dsh-at-file（**已脱钩**） | MIT | link 路径改 `../../deepseek-harness/`（16 处 devDeps + vitest alias） | **已脱离上游**（2026-08-15 重写历史单作者化；不再 subtree pull；2026-08-16 并入 dsh-essentials，2026-08-19 随并入 dsh-ui-tweaks） |
+| [dsh-ui-tweaks（lib/paste-input/）](https://github.com/bitterSmilezzz/dsh-ui-tweaks) | @dsh-community (8⭐，**已脱钩**) | MIT | 文案本地化（`locale`）+ 设置页导航图标（官方回形针 DOM 级替换）+ 遮罩/主按钮 token 化 + 资源优化三轮（mapFiles O(n²)→O(n·maxDepth) 等） | **已脱离上游**（2026-08-15 脱钩，按第一方维护；2026-08-16 并入 dsh-essentials，2026-08-19 随并入 dsh-ui-tweaks） |
+| ~~dsh-router-standard 预设~~ | yjh051108/dsh-router-standard（**源仓库**，套装仓库 dsh-routing-suite 已弃用） | MIT | ① 测试 import 路径修复 ② preset.yml description 加引号 + 中文化 | **已删除（2026-08-19）**：Router Standard/Spec 预设随用户要求全部移除，不再跟随上游 |
 | ~~dsh-mode-boost~~ | ~~yjh051108/dsh-mode-boost~~ | ~~MIT~~ | **已删除（2026-08-18 去芜存菁）**：mode-boost 自动应用路由违反设计理念，host 副本 `lib/mode-boost/` 已移除 | — |
 | ~~dsh-essentials/lib/modlens~~ | ~~liustack/modlens~~ | ~~MIT~~ | **已随 vision-bridge 移出**：modlens 已被 vision-bridge 替代，半成品从 essentials 移除；visualize + vision-bridge 现独立为 `dsh-visualize` | — |
 | [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) | feiyang-dev/dsh-usage-plugin（1.4.0） | MIT | ① 概览统计卡加 SVG 图标；② 导出按钮收敛为「导出 ▾」下拉（CSV/JSON/PNG/打开目录）；③ 「用量与消耗」「剩余余额查询」合并为一个「用量统计」入口（内部 tab 切换）；④ 设置导航图标改为 DSH 原生 `ic_ds_goal_outline_16` 风格（避免与模型图标重复） | **独立仓库（2026-08-19 拆分）**：`bitterSmilezzz/dsh-usage-plugin`；升级 = `git fetch upstream && git merge` 后复查修改点 |
@@ -63,19 +65,19 @@
 
 ## 本地修改详情（升级合入时重点检查）
 
-### dsh-essentials/lib/at-file — link 路径（基础设施修改）
+### dsh-ui-tweaks/lib/at-file — link 路径（基础设施修改）
 
 - **已脱离上游（2026-08-15）**：`git filter-repo --mailmap` 重写历史单作者化，不再 subtree pull，
-  按第一方插件维护。**独立仓库（2026-08-19）**：源码在 dsh-essentials 仓库的 `lib/at-file/`。
+  按第一方插件维护。**独立仓库（2026-08-19）**：源码在 dsh-ui-tweaks 仓库的 `lib/at-file/`。
 - **改了什么**：devDependencies 全部 `link:../dsh/...` → `link:../../deepseek-harness/...`（16 处），
   `vitest.config.ts` alias 同步（1 处）——上游假设插件与 `dsh` 目录平级，monorepo 里是两跳。
 - **验证**：`pnpm install && pnpm test`（149 项）全过。
 
-### dsh-essentials/lib/paste-input — 已脱离上游（本地化 + 导航图标 + 主题 token + 资源优化）
+### dsh-ui-tweaks/lib/paste-input — 已脱离上游（本地化 + 导航图标 + 主题 token + 资源优化）
 
 - **已脱离上游（2026-08-15）**：不再跟随上游，本仓库副本即唯一事实来源，按第一方维护
   （未做历史重写，原作者仍留在贡献者史里——与 at-file 的差异是刻意的）。
-  **独立仓库（2026-08-19）**：源码在 dsh-essentials 仓库的 `lib/paste-input/`。
+  **独立仓库（2026-08-19）**：源码在 dsh-ui-tweaks 仓库的 `lib/paste-input/`。
 - **改了什么**：① 文案接 `@deepseek-ai/dsh-client-locale`（inject 双处声明）；② 设置页导航图标
   DOM 级替换为官方回形针（外壳 `navIcon()` 无 slot hook，MutationObserver 常驻，卸载重启恢复）；
   ③ CSS token 化（遮罩 → `--dsw-alias-bg-mask-1` + `--dsw-mask-blur`，OK 按钮 →

@@ -11,21 +11,22 @@
 
 ## 仓库概况
 
-- **DSH 场景化插件 meta-repo（纯汇总仓库）**：自研 bundle 插件为 6 个独立仓库，技能包
-  保持 dsh-skills 合并仓，第三方 fork 保持独立（2026-08-19 定型）；本仓库只维护
-  `plugins.json`（来源真相，见 [README.md](README.md#目录)）、安装脚本与文档。
+- **DSH 场景化插件 meta-repo（纯汇总仓库）**：自研 bundle 插件为 5 个独立仓库（essentials
+  已并入 ui-tweaks），技能包保持 dsh-skills 合并仓，第三方 fork 保持独立（2026-08-19
+  定型）；本仓库只维护 `plugins.json`（来源真相，见 [README.md](README.md#目录)）、
+  安装脚本与文档。
   所有插件由 `install.sh` 按清单 GitHub 直装；纯技能包由 `install.sh` clone 后
   复制到 `~/.agents/skills`。
 - **插件清单**（均在 `bitterSmilezzz/` 下，见 `plugins.json`）：
-  - **自研 bundle（独立仓库）**：`dsh-core`、`dsh-essentials`、`dsh-memory`、
-    `dsh-visualize`、`dsh-ui-tweaks`、`dsh-work`（2026-08-19 从合并仓拆回独立仓库，
-    直接 `github:<repo>#<ref>` 安装）
+  - **自研 bundle（独立仓库）**：`dsh-core`、`dsh-memory`、`dsh-visualize`、
+    `dsh-ui-tweaks`、`dsh-work`（2026-08-19 从合并仓拆回独立仓库；同日 essentials
+    并入 dsh-ui-tweaks，直接 `github:<repo>#<ref>` 安装）
   - **技能合并仓**：`dsh-skills`（子包 dsh-dev/writing/design，经 `&path:/<子包>` 安装）
   - **第三方 fork（独立）**：`dsh-better-sidebar`、`dsh-market`、`dsh-usage-plugin`、
     `DSH-Transparent-UI-Plugin`（aqua）
   - **自研独立**：`dsh-desktop-shell`（原生代码）
 - **依赖引用**：bundle 插件均为独立仓库，直接 `github:<repo>#<ref>` 安装；仅 dsh-skills
-  技能包子包用 `&path:/<subdir>` 语法。dsh-core 被 essentials/work 以
+  技能包子包用 `&path:/<subdir>` 语法。dsh-core 被 ui-tweaks/work 以
   `github:bitterSmilezzz/dsh-core` 引用（独立仓库，pnpm 直接解析）。
 - **插件形态**：真 bundle 是 **bundle 补丁**（`dsh.bundle.patch` → `cordis.patch.yml` 插入 host
   插件 + `dsh.client` 可选浏览器半区）；纯技能包不是 bundle，不走 `dsh plugin add`。
@@ -52,7 +53,7 @@ plugins.json（来源真相清单） · scripts/（install.sh 一键装 + 一致
 
 所有 GitHub 上的 dsh 插件仓库统一放在一个**伞目录**下（跨平台约定；Windows 当前为
 `D:\workspace\deepseek-harness`，macOS 参照同一约定自行设定伞目录路径）。伞目录内含各插件
-独立 git 仓库（如 `dsh-essentials`、`dsh-ui-aqua`、`dsh-desktop-shell`）、`deepseek-harness`
+独立 git 仓库（如 `dsh-ui-tweaks`、`dsh-ui-aqua`、`dsh-desktop-shell`）、`deepseek-harness`
 源码 checkout（仅参照用）、`doc/` 本地修复/迁移记录。
 
 **meta-repo 保持干净**：本仓库只存 `plugins.json` + 脚本 + 文档；编译产物（如 `target/`）、
@@ -68,7 +69,7 @@ plugins.json（来源真相清单） · scripts/（install.sh 一键装 + 一致
   upstream/main` 后对照 THIRD-PARTY.md 复查修改点；不再 `subtree` 收编进汇总仓库。
 - **已脱离上游**：`dsh-at-file`（filter-repo 重写历史单作者化）、`dsh-paste-input`
   （用户决定脱钩，未重写历史——差异刻意）、`dsh-memory`（已拆独立仓库）；源码在
-  `dsh-essentials/lib/{at-file,paste-input}/` 或各自独立仓库，不再 `subtree pull`。
+  `dsh-ui-tweaks/lib/{at-file,paste-input}/` 或各自独立仓库，不再 `subtree pull`。
 - **原样收编**：`dsh-router-standard`（可直接跟随上游）。
 - **改第三方插件改完立即提交**（并行会话 git checkout 会清未提交工作）。
 
@@ -130,7 +131,7 @@ plugins.json（来源真相清单） · scripts/（install.sh 一键装 + 一致
 - **⚑ Context 是最贵资源**：LLM 上下文窗口有限且昂贵；工具越少、越精准，Agent 越高效。
   单个插件工具数默认不超过 3 个；超过 5 个需专项评审；超过 10 个必须拆分。
 - **⚑ 核心最小化**：默认只给最少必要工具；能力按需通过 skill / 脚本 / 扩展 / 插件包添加，
-  不把重功能塞进核心。核心插件（essentials）宿主工具 ≤ 2，客户端工具 ≤ 3。
+  不把重功能塞进核心。核心插件（ui-tweaks）宿主工具 ≤ 2，客户端工具 ≤ 3。
 - **⚑ 不内置重功能**：不默认引入 MCP、子代理、计划模式、内置 todo、后台 bash、权限弹窗；
   用 CLI 工具 + README（skill）、TODO.md、tmux、容器/沙箱、显式确认流实现同等能力。
 - **⚑ 用户决定需要什么**：插件适配用户工作流，而不是让用户适配插件；保持核心小，
