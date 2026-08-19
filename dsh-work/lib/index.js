@@ -76,19 +76,11 @@ export function apply(ctx, config) {
         'agent_teams_status',
         'agent_teams_delete',
     ], (x) => x).join(', ');
-    // 惰性注入：只在用户首次调用 agent_teams_activate 时才挂载 systemPrompt
-    // 章节。避免每个会话都携带 ~50 行使用说明浪费 token（pi-agent 理念：
-    // 零多余上下文注入）。
-    let systemPromptRegistered = false;
-    function ensureSystemPrompt() {
-        if (systemPromptRegistered) return;
-        systemPromptRegistered = true;
-        ctx.systemPrompt.section({
-            name: 'agent-teams:usage',
-            order: config.promptSectionOrder ?? 117,
-            text: usageSectionText(toolNames),
-        });
-    }
+    ctx.systemPrompt.section({
+        name: 'agent-teams:usage',
+        order: config.promptSectionOrder ?? 117,
+        text: usageSectionText(toolNames),
+    });
     let agentTeamsActivated = false;
     ctx.tools.register(defineTool({
         name: 'agent_teams_activate',
@@ -101,7 +93,6 @@ export function apply(ctx, config) {
         async execute() {
             if (agentTeamsActivated)
                 return 'AgentTeams tools already enabled.';
-            ensureSystemPrompt();
             registerAgentTeamsTools(ctx, resolved);
             agentTeamsActivated = true;
             return 'AgentTeams tools enabled: agent_teams_create, agent_teams_add_member, agent_teams_remove_member, agent_teams_create_task, agent_teams_claim_task, agent_teams_update_task, agent_teams_send_message, agent_teams_status, agent_teams_delete.';

@@ -11,7 +11,6 @@
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { join } from 'node:path';
-import { appendTeamEvent, captainSessionOf } from "./events.js";
 import { appendMailbox, archiveTeamDir, CAPTAIN_KEY, createMessage, createTeamDir, findTeamByCaptain, findTeamByParticipant, readMailbox, readTeam, sanitizeKey, transitionError, unsatisfiedDependencies, withTeamLock, writeTeam, } from "./state.js";
 import { deliverToMember, installMemberSelectionRuntime, interruptMember, memberActivity, resolveMemberLlmSelection, spawnMember, } from "./members.js";
 /** The caller agent, or a loud failure for non-agent callers. */
@@ -157,6 +156,13 @@ export function registerAgentTeamsTools(ctx, config) {
             if (teamName === '')
                 throw new Error('team name must not be empty');
             const teamId = sanitizeKey(teamName);
+            // `archive` collides with the archive root directory under the state
+            // root (a team dir of that name would self-nest on archive, and the
+            // archived scan would read the wrong record); `captain` is reserved for
+            // the captain mailbox key. Reject both before any directory is created.
+            if (teamId === 'archive' || teamId === CAPTAIN_KEY) {
+                throw new Error(`team name "${args.name}" folds to reserved id "${teamId}"; pick a different name`);
+            }
             return withTeamLock(captainLockKey(stateRoot, captain.id), async () => {
                 const current = await findTeamByParticipant(stateRoot, captain.id);
                 if (current !== undefined) {
@@ -179,12 +185,6 @@ export function registerAgentTeamsTools(ctx, config) {
                         taskSeq: 0,
                     };
                     await createTeamDir(stateRoot, state);
-                    appendTeamEvent(ctx, captain.session, 'agent-teams/team-created', {
-                        teamId: state.id,
-                        captainSessionId: captain.id,
-                        name: state.name,
-                        ...state.description !== undefined ? { description: state.description } : {},
-                    });
                     return { team_id: state.id, team_name: state.name, state_dir: join(stateRoot, state.id) };
                 });
             });
@@ -254,13 +254,17 @@ export function registerAgentTeamsTools(ctx, config) {
                 };
                 await spawnMember(ctx, memberRuntime(config), memberSelections, selection, captain, fresh, member, config.stateDir, exec.signal);
                 fresh.members.push(member);
-                await writeTeam(stateRoot, fresh);
-                appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, captain.session), 'agent-teams/member-added', {
-                    teamId: fresh.id,
-                    memberId: member.id,
-                    name: member.name,
-                    ...member.role !== undefined ? { role: member.role } : {},
-                });
+                try {
+                    await writeTeam(stateRoot, fresh);
+                }
+                catch (error) {
+                    // The child subagent already exists (spawned above); if persisting
+                    // the team record fails, interrupt the orphan so it is not left
+                    // running forever with no team to come back to.
+                    if (member.id !== '')
+                        interruptMember(ctx, captain, member.id);
+                    throw error;
+                }
                 return {
                     member_name: member.name,
                     member_id: member.id,
@@ -305,11 +309,19 @@ export function registerAgentTeamsTools(ctx, config) {
                 if (member.id !== '')
                     interruptMember(ctx, captain, member.id);
                 member.status = 'removed';
+                // Reopen any task this member still holds: a claimed/in_progress task
+                // whose assignee is now removed is permanently stranded (claim_task's
+                // idempotent branch rejects reassignment, update_task cannot move
+                // claimed → pending). Reset it so the captain can re-claim and
+                // reassign it, unblocking its dependency chain.
+                for (const task of fresh.tasks) {
+                    if (task.assignee === member.name && (task.status === 'claimed' || task.status === 'in_progress')) {
+                        task.status = 'pending';
+                        task.assignee = undefined;
+                        task.updatedAt = Date.now();
+                    }
+                }
                 await writeTeam(stateRoot, fresh);
-                appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, captain.session), 'agent-teams/member-removed', {
-                    teamId: fresh.id,
-                    memberId: member.id,
-                });
                 return { member_name: member.name, status: member.status };
             });
         },
@@ -358,8 +370,15 @@ export function registerAgentTeamsTools(ctx, config) {
                 }
                 if (args.assignee !== undefined)
                     requireMember(fresh, args.assignee);
+                // Reject dependency cycles: a task that (transitively) depends on
+                // itself can never satisfy `unsatisfiedDependencies` (only
+                // `completed` unblocks), stranding its whole downstream chain forever.
+                const taskId = `t${fresh.taskSeq + 1}`;
+                if (wouldIntroduceCycle(fresh.tasks, taskId, dependencies)) {
+                    throw new Error(`dependencies would form a cycle (task ${taskId} depends on itself transitively); refusing to create it`);
+                }
                 const task = {
-                    id: `t${fresh.taskSeq + 1}`,
+                    id: taskId,
                     subject: args.subject,
                     description: args.description,
                     status: 'pending',
@@ -371,13 +390,6 @@ export function registerAgentTeamsTools(ctx, config) {
                 fresh.taskSeq += 1;
                 fresh.tasks.push(task);
                 await writeTeam(stateRoot, fresh);
-                appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, captain.session), 'agent-teams/task-created', {
-                    teamId: fresh.id,
-                    taskId: task.id,
-                    subject: task.subject,
-                    dependencies: task.dependencies,
-                    ...task.assignee !== undefined ? { assignee: task.assignee } : {},
-                });
                 return {
                     task_id: task.id,
                     subject: task.subject,
@@ -436,8 +448,23 @@ export function registerAgentTeamsTools(ctx, config) {
                 // Authorization must happen before the idempotent return: another
                 // member must not receive a false success for somebody else's task.
                 if (task.status === 'claimed' || task.status === 'in_progress') {
-                    if (assignee === undefined || task.assignee !== assignee) {
+                    // A task held by a member who is no longer active is orphaned: the
+                    // captain may claim it for a new assignee (remove_member resets
+                    // such tasks, but this guard also covers state written before that
+                    // fix or hand-edited files).
+                    const holderActive = task.assignee !== undefined
+                        && fresh.members.some((candidate) => candidate.name === task.assignee && candidate.status !== 'removed');
+                    if (holderActive && (assignee === undefined || task.assignee !== assignee)) {
                         throw new Error(`task ${task.id} is already claimed by "${task.assignee ?? 'nobody'}"`);
+                    }
+                    if (assignee === undefined) {
+                        throw new Error('claiming a task needs an assignee (claim on behalf of a member)');
+                    }
+                    if (!holderActive && task.status === 'claimed' && task.assignee !== assignee) {
+                        // Reassign the orphaned task to the new holder.
+                        task.assignee = assignee;
+                        task.updatedAt = Date.now();
+                        await writeTeam(stateRoot, fresh);
                     }
                     return { task_id: task.id, status: task.status, assignee };
                 }
@@ -455,25 +482,19 @@ export function registerAgentTeamsTools(ctx, config) {
                 task.assignee = assignee;
                 task.updatedAt = Date.now();
                 await writeTeam(stateRoot, fresh);
-                appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, caller.session), 'agent-teams/task-updated', {
-                    teamId: fresh.id,
-                    taskId: task.id,
-                    status: task.status,
-                    assignee: task.assignee,
-                });
                 return { task_id: task.id, status: task.status, assignee: task.assignee ?? '' };
             });
         },
     }));
     ctx.tools.register(defineTool({
         name: 'agent_teams_update_task',
-        description: 'Update a task status and/or write output. Transitions: claimed → in_progress → completed|failed|cancelled; captain any task, member assigned only.',
+        description: 'Update a task status and/or write output. Transitions: claimed → in_progress → completed|failed|cancelled; captain may also reopen failed/cancelled tasks to pending and may update any task, member assigned only.',
         parameters: {
             task_id: { type: 'string', required: true, description: 'The task id to update.' },
             status: {
                 type: 'string',
-                enum: ['in_progress', 'completed', 'failed', 'cancelled'],
-                description: 'New status (in_progress, completed, failed, cancelled).',
+                enum: ['pending', 'in_progress', 'completed', 'failed', 'cancelled'],
+                description: 'New status (pending, in_progress, completed, failed, cancelled). Reopening to pending is captain-only.',
             },
             output: { type: 'string', description: 'Result summary; set when completing or failing.' },
         },
@@ -506,6 +527,15 @@ export function registerAgentTeamsTools(ctx, config) {
                     }
                 }
                 if (args.status !== undefined) {
+                    // Reopening a terminal task to pending is the captain's recovery
+                    // lever (TASK_TRANSITIONS.failed/cancelled → pending). Members must
+                    // never reopen their own failures or cancel a peer's completed work.
+                    if (args.status === 'pending' && identity.kind === 'member') {
+                        throw new Error('only the captain may reopen a task to pending (to retry a failed/cancelled task)');
+                    }
+                    if (task.status === 'completed' && args.status === 'pending') {
+                        throw new Error('a completed task cannot be reopened to pending');
+                    }
                     const transition = transitionError(task.status, args.status);
                     if (transition !== undefined)
                         throw new Error(transition);
@@ -515,13 +545,6 @@ export function registerAgentTeamsTools(ctx, config) {
                     task.output = args.output;
                 task.updatedAt = Date.now();
                 await writeTeam(stateRoot, fresh);
-                appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, caller.session), 'agent-teams/task-updated', {
-                    teamId: fresh.id,
-                    taskId: task.id,
-                    status: task.status,
-                    ...task.assignee !== undefined ? { assignee: task.assignee } : {},
-                    ...task.output !== undefined ? { output: task.output } : {},
-                });
                 return {
                     task_id: task.id,
                     status: task.status,
@@ -571,27 +594,11 @@ export function registerAgentTeamsTools(ctx, config) {
                 if (to === CAPTAIN_KEY) {
                     const message = createMessage(from, CAPTAIN_KEY, args.content);
                     await appendMailbox(stateRoot, fresh.id, CAPTAIN_KEY, message);
-                    appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, caller.session), 'agent-teams/message-sent', {
-                        teamId: fresh.id,
-                        messageId: message.id,
-                        from,
-                        to: CAPTAIN_KEY,
-                        content: args.content,
-                        ts: message.ts,
-                    });
                     return { kind: 'captain', fresh, identity, message, from };
                 }
                 const recipient = requireMember(fresh, to);
                 const message = createMessage(from, recipient.name, args.content);
                 await appendMailbox(stateRoot, fresh.id, recipient.name, message);
-                appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, caller.session), 'agent-teams/message-sent', {
-                    teamId: fresh.id,
-                    messageId: message.id,
-                    from,
-                    to: recipient.name,
-                    content: args.content,
-                    ts: message.ts,
-                });
                 return { kind: 'member', fresh, identity, message, from, recipient };
             });
             // Resolve the exact live captain only after releasing the state lock.
@@ -645,7 +652,17 @@ export function registerAgentTeamsTools(ctx, config) {
                 model: member.model ?? '',
                 reasoning_effort: member.reasoningEffort ?? '',
                 status: member.status,
-                activity: member.id !== '' ? (activity.get(member.id) ?? 'unknown') : 'unspawned',
+                // Use the same activity vocabulary as the activity panel snapshot
+                // (working/idle/unknown/unspawned), so the model's view of a member
+                // matches what the UI shows. `memberActivity` returns the raw
+                // subagent activity ('running'/'inactive'); map it consistently.
+                activity: member.id === ''
+                    ? 'unspawned'
+                    : (activity.get(member.id) === 'running'
+                        ? 'working'
+                        : activity.get(member.id) === 'inactive'
+                            ? 'idle'
+                            : 'unknown'),
             }));
             const tasks = team.tasks.map((task) => ({
                 id: task.id,
@@ -699,7 +716,7 @@ export function registerAgentTeamsTools(ctx, config) {
     }));
     ctx.tools.register(defineTool({
         name: 'agent_teams_delete',
-        description: 'End the team: interrupts members (best effort) and deletes state. Use when work is done/abandoned.',
+        description: 'End the team: interrupts members (best effort) and archives its state for later review. Use when work is done/abandoned.',
         parameters: {},
         output: {
             schema: {
@@ -712,7 +729,7 @@ export function registerAgentTeamsTools(ctx, config) {
             },
             render: (args, value) => [{
                     type: 'text',
-                    text: `Team "${value.team_name}" deleted.`,
+                    text: `Team "${value.team_name}" ended and archived.`,
                 }],
         },
         async execute(_args, exec) {
@@ -726,9 +743,6 @@ export function registerAgentTeamsTools(ctx, config) {
                     if (member.status !== 'removed' && member.id !== '')
                         interruptMember(ctx, captain, member.id);
                 }
-                appendTeamEvent(ctx, captainSessionOf(ctx, fresh.captainSessionId, captain.session), 'agent-teams/team-deleted', {
-                    teamId: fresh.id,
-                });
                 // Archive, not delete: tasks (with their dependency graph) and the
                 // mailboxes stay on disk for later review and dependency rebuilds.
                 await archiveTeamDir(stateRoot, fresh.id);
@@ -743,6 +757,33 @@ function memberRuntime(config) {
         provider: config.memberProvider,
         maxDepth: config.memberMaxDepth,
     };
+}
+/**
+ * Whether adding a task with the given `dependencies` to the existing task
+ * list would introduce a dependency cycle (the new task reachable from
+ * itself). `unsatisfiedDependencies` only unblocks on `completed`, so a cycle
+ * would strand the whole chain forever.
+ * @param tasks - the team's existing tasks.
+ * @param newTaskId - the id of the task being created.
+ * @param dependencies - the new task's dependency ids.
+ */
+export function wouldIntroduceCycle(tasks, newTaskId, dependencies) {
+    const byId = new Map(tasks.map((task) => [task.id, task]));
+    // Transitively collect every task that the new task depends on; if any of
+    // them depends (directly or transitively) on the new task id, it is a cycle.
+    const seen = new Set();
+    const reachable = (id) => {
+        if (id === newTaskId)
+            return true;
+        if (seen.has(id))
+            return false;
+        const task = byId.get(id);
+        if (task === undefined)
+            return false;
+        seen.add(id);
+        return task.dependencies.some(reachable);
+    };
+    return dependencies.some((dependency) => reachable(dependency));
 }
 /** Render the status snapshot as compact text for the model. */
 function renderStatus(value) {

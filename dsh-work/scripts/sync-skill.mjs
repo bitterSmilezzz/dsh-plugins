@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
 const sourcePath = resolve(root, 'skills/dsh-plugin-development/SKILL.md')
@@ -33,6 +33,10 @@ async function main() {
     return
   }
 
+  // The mirror directory may not exist in a fresh checkout or a tarball
+  // snapshot (`.dsh/` is not part of the shipped files list); create it
+  // before writing, otherwise a bare clone fails the sync with ENOENT.
+  await mkdir(dirname(mirrorPath), { recursive: true })
   await writeFile(mirrorPath, source, 'utf8')
   console.log(`Synced ${mirrorPath}`)
 }

@@ -39,25 +39,44 @@ export interface MemberLlmSelectionRequest {
     /** Plugin-level member model default. */
     defaultModel?: string;
 }
-/** Process-local bridge between spawn admission and synchronous child setup. */
-export interface MemberSelectionRuntime {
-    /** Make one selection visible while Harness materializes the fresh child. */
-    withPending<T>(parentSessionId: string, label: string, selection: MemberLlmSelection, operation: () => Promise<T>): Promise<T>;
+/** Optional member-level route requested by the captain. */
+export interface MemberLlmSelectionRequest {
+    /** Explicit LLM provider route; requires an explicit model. */
+    provider?: string;
+    /** Explicit model id; otherwise the plugin default or captain model is used. */
+    model?: string;
+    /** Plugin-level member model default. */
+    defaultModel?: string;
 }
 /**
- * Resolve one member's complete model selection. Ordinary members snapshot the
- * captain's current request route and reasoning effort. An explicit member
- * provider/model or plugin-level model replaces only that route; the current
- * captain effort remains the inherited policy and is validated against the
- * target model before a child is created.
+ * Resolve one member's complete model selection, mirroring what
+ * `startContinuable`'s official route inheritance would choose. Ordinary
+ * members snapshot the captain's current request route and reasoning effort;
+ * an explicit member provider/model or plugin-level model replaces only that
+ * route. The resolved provider/model feeds the official `agentOptions`
+ * (persisted + cold-restored by the descriptor); the effort travels through
+ * the small pending bridge because `AgentOptions` has no effort field.
  */
 export declare function resolveMemberLlmSelection(ctx: Context, captain: Agent, request: MemberLlmSelectionRequest, signal?: AbortSignal): Promise<MemberLlmSelection>;
+/** Process-local bridge between spawn admission and synchronous child setup.
+ * Only the reasoning effort travels through it: the provider/model route is
+ * already persisted and cold-restored by the official `startContinuable`
+ * descriptor (`resolveChildAgentOptions` + durable agentProvider/agentModel),
+ * so re-passing it here would duplicate the official mechanism. */
+export interface MemberSelectionRuntime {
+    /** Make one effort visible while Harness materializes the fresh child. */
+    withPendingEffort<T>(parentSessionId: string, label: string, reasoningEffort: string | undefined, operation: () => Promise<T>): Promise<T>;
+}
 /**
  * Install the member selection bridge for every fresh or cold-resumed
- * continuable child. Fresh creation reads the pending in-memory selection;
- * cold resume restores the same selection from the owning team's durable
- * record. Legacy members without a complete saved route retain Harness's
- * descriptor provider/model behavior.
+ * continuable child.
+ *
+ * Provider/model are the official `startContinuable` descriptor's job
+ * (snapshotted before any await, restored on cold resume), so this bridge
+ * only fills the one slot the official route leaves open: reasoning effort,
+ * which is absent from `AgentOptions` and not restored by the descriptor.
+ * Fresh creation reads the pending in-memory effort; cold resume reads the
+ * owning team's durable record.
  */
 export declare function installMemberSelectionRuntime(ctx: Context, stateDir: string): MemberSelectionRuntime;
 /**

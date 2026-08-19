@@ -10,6 +10,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis';
 import type { Agent } from '@deepseek-ai/dsh-agent';
+import type { TeamTask } from './types.ts';
 /** Resolved plugin config consumed by the tools. */
 export interface ToolsConfig {
     /** State directory name under the captain's workspace. */
@@ -38,3 +39,13 @@ export declare function steerCaptainReport(captain: Pick<Agent, 'steer'>, from: 
  * @param config - resolved tool config.
  */
 export declare function registerAgentTeamsTools(ctx: Context, config: ToolsConfig): void;
+/**
+ * Whether adding a task with the given `dependencies` to the existing task
+ * list would introduce a dependency cycle (the new task reachable from
+ * itself). `unsatisfiedDependencies` only unblocks on `completed`, so a cycle
+ * would strand the whole chain forever.
+ * @param tasks - the team's existing tasks.
+ * @param newTaskId - the id of the task being created.
+ * @param dependencies - the new task's dependency ids.
+ */
+export declare function wouldIntroduceCycle(tasks: readonly TeamTask[], newTaskId: string, dependencies: readonly string[]): boolean;

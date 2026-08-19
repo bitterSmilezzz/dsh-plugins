@@ -23,24 +23,12 @@ export declare const CAPTAIN_KEY = "captain";
  */
 export declare function withTeamLock<T>(key: string, fn: () => Promise<T>): Promise<T>;
 /**
- * Fold a free-form name into a safe path/key segment.
- *
- * Unicode letters and digits survive, so CJK/Cyrillic/Greek names stay
- * distinct and readable; everything else — spaces, punctuation, path
- * separators, control characters — folds to `-`. An ASCII-only whitelist
- * mapped *every* non-Latin name onto one shared fallback, which silently
- * merged their mailboxes and rejected the second such member as a duplicate.
- *
- * A name with no letters or digits at all (pure emoji or punctuation) cannot
- * yield a readable key, so it gets a digest rather than a shared constant.
- * Over-long names are truncated with a digest appended, so names sharing a
- * long prefix stay distinct and the result stays within filesystem limits
- * (CJK costs 3 bytes per character in UTF-8).
- *
+ * Fold a free-form name into a safe path/key segment. Re-exported from the
+ * shared `team-key` module so the browser bundle derives the same ids.
  * @param name - any user-supplied name.
  * @returns a non-empty key safe as a single path segment.
  */
-export declare function sanitizeKey(name: string): string;
+export { sanitizeKey } from './team-key.ts';
 /**
  * Whether `dependencies` are all satisfied (every named task exists and
  * completed) for the given task list.
@@ -51,7 +39,11 @@ export declare function sanitizeKey(name: string): string;
 export declare function unsatisfiedDependencies(tasks: TeamTask[], dependencies: string[]): string[];
 /**
  * The allowed task status transitions, keyed by current status.
- * Terminal statuses have no outgoing transitions.
+ * Terminal statuses normally have no outgoing transitions, but `failed` and
+ * `cancelled` keep a captain-only `pending` recovery edge so a failed task
+ * (or its cancelled stand-in) can be reopened and its dependency chain
+ * unblocked instead of bricking every transitive dependent forever. The
+ * captain gate lives in the tool layer (`agent_teams_update_task`), not here.
  */
 export declare const TASK_TRANSITIONS: Readonly<Record<TaskStatus, readonly TaskStatus[]>>;
 /**
