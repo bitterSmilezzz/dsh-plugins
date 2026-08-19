@@ -13,8 +13,9 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 
 ## 目录
 
-> ✅ **2026-08-19 架构定型（v3）**：自研 bundle 插件拆分为 5 个独立仓库（core/memory/
-> visualize/ui-tweaks/work；essentials 已并入 ui-tweaks），技能包保持 dsh-skills 合并仓，
+> ✅ **2026-08-19 架构定型（v3）**：自研 bundle 插件为 4 个独立仓库（memory/
+> visualize/ui-tweaks/work；essentials 已并入 ui-tweaks，dsh-core 因无多消费者已内联清理删除），
+> 技能包保持 dsh-skills 合并仓，
 > 第三方 fork 保持独立。
 > 本仓库为纯汇总（meta-repo），只维护 `plugins.json`（来源真相）+ 安装脚本 + 文档。
 > 每个插件可单独安装，也可一键安装全部核心场景。
@@ -23,7 +24,6 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 
 | 插件 | 类型 | 说明 | 仓库 |
 | --- | --- | --- | --- |
-| dsh-core | bundle | 共享工具（mergeConfig/dedupeBy/hash） | [dsh-core](https://github.com/bitterSmilezzz/dsh-core) |
 | dsh-memory | bundle + client | 记忆插件（自动日志/画像/摘要） | [dsh-memory](https://github.com/bitterSmilezzz/dsh-memory) |
 | dsh-visualize | bundle + client | 可视化 + 识图（visualize / vision_read_image） | [dsh-visualize](https://github.com/bitterSmilezzz/dsh-visualize) |
 | dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
@@ -50,8 +50,9 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 
 > **架构演进（2026-08-19）**：
 > - 自研插件先合并为 2 个 monorepo（dsh-plugins/dsh-skills），同日又拆回独立仓库；
->   2026-08-19 再把 dsh-essentials（去路由预设）并入 dsh-ui-tweaks，现为 5 个独立仓库
->   （core/memory/visualize/ui-tweaks/work），技能包仍留 dsh-skills 合并仓。
+>   2026-08-19 再把 dsh-essentials（去路由预设）并入 dsh-ui-tweaks，并清理删除
+>   dsh-core（共享函数内联进消费方），现为 4 个独立仓库
+>   （memory/visualize/ui-tweaks/work），技能包仍留 dsh-skills 合并仓。
 > - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
 > - 第三方 fork（market/usage/better-sidebar/aqua）**保持独立**（需跟上游 merge）。
 > - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 已改名收编为 `dsh-work`。
@@ -113,7 +114,7 @@ node scripts/install-plugins.mjs -p web --only dsh-ui-tweaks,dsh-memory
 
 ```sh
 git clone https://github.com/bitterSmilezzz/dsh-ui-tweaks.git ~/workspace/dsh-ui-tweaks
-cd ~/workspace/dsh-ui-tweaks && pnpm install    # 装依赖（含 github 引用的 dsh-core）
+cd ~/workspace/dsh-ui-tweaks && pnpm install    # 装依赖（官方 @deepseek-ai/* 包）
 
 # 从本地 link 装（替换 github 源）
 dsh plugin --profile web add ~/workspace/dsh-ui-tweaks
@@ -137,14 +138,14 @@ dsh plugin --profile web add ~/workspace/dsh-work
 
 ## English Index
 
-A DSH plugin **meta-repo**: self-developed bundle plugins live in six standalone
+A DSH plugin **meta-repo**: self-developed bundle plugins live in standalone
 repos, skills stay in the `dsh-skills` monorepo, third-party forks stay
 independent (see [plugins.json](plugins.json)); this repo holds the manifest,
 install scripts, and docs. All plugins install from GitHub.
 
-- `dsh-core`, `dsh-memory`, `dsh-visualize`, `dsh-work` — standalone repos;
+- `dsh-memory`, `dsh-visualize`, `dsh-work` — standalone repos;
   `dsh-ui-tweaks` — standalone repo (base input + UI enhancements + desktop notifications,
-  merged from former essentials).
+  merged from former essentials; `dsh-core` was inlined and removed 2026-08-19).
 - `dsh-skills` — monorepo: `dsh-dev`, `dsh-writing` (39 writing skills), `dsh-design`.
 - `dsh-better-sidebar`, `dsh-market`, `dsh-usage-plugin`,
   `DSH-Transparent-UI-Plugin` (aqua) — third-party forks (independent, track upstream).
