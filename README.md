@@ -20,6 +20,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 > 第三方 fork 保持独立。
 > 本仓库为纯汇总（meta-repo），只维护 `plugins.json`（来源真相）+ 安装脚本 + 文档。
 > 每个插件可单独安装，也可一键安装全部核心场景。
+> **2026-08-20**：`dsh-work`（agent-teams 收编版）因与官方 rc.8 内置 Agent Teams 运行时功能重复，已退役清仓。
 
 ### 自研插件（独立仓库）
 
@@ -28,7 +29,6 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | dsh-memory | bundle + client | 记忆插件（自动日志/画像/摘要） | [dsh-memory](https://github.com/bitterSmilezzz/dsh-memory) |
 | dsh-visualize | bundle + client | 可视化 + 识图（visualize / vision_read_image） | [dsh-visualize](https://github.com/bitterSmilezzz/dsh-visualize) |
 | dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
-| dsh-work | bundle + client | 工作/协作（多 Agent 团队） | [dsh-work](https://github.com/bitterSmilezzz/dsh-work) |
 | dsh-usage-plugin | bundle + client | 用量/消耗统计（2026-08-19 脱钩内化改自研 + Pi 精简：概览/日历/余额面板 + usage_stats 工具） | [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) |
 | dsh-model-fix | bundle（host-only） | 模型流式缺陷修复：opencode 端点上 muse-spark-1.2 不发送 finish_reason/[DONE]，llm/stream 收尾改 stop（直连可用、不触发重试；**无需开启 opencode 训练授权开关**；2026-08-19 新建） | [dsh-model-fix](https://github.com/bitterSmilezzz/dsh-model-fix) |
 
@@ -58,7 +58,8 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 > - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
 > - 第三方 fork（market/better-sidebar/aqua）**保持独立**（需跟上游 merge）；
 >   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）。
-> - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 已改名收编为 `dsh-work`。
+> - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 曾改名收编为 `dsh-work`，
+>   因与官方 rc.8 内置 Agent Teams 运行时功能重复已于 2026-08-20 退役清仓。
 > - `dsh-notify`（系统通知）已并入 `dsh-ui-tweaks`，代码级重构为单一 bundle。
 
 ## 社区推荐（不收编，各自维护）
@@ -82,7 +83,7 @@ cd deepseek-plugins
 bash scripts/install.sh
 ```
 
-`--all`（默认）安装**全部插件**：自研 6 bundle（独立仓库）+ 3 个第三方 fork +
+`--all`（默认）安装**全部插件**：自研 5 bundle（独立仓库）+ 3 个第三方 fork +
 3 个技能包。安装来源以 [plugins.json](plugins.json) 为真相：
 bundle 全部从 GitHub 直装（`github:<repo>#<ref>`），技能包子包用 `&path:/<subdir>`；
 纯技能包 clone 到 `~/.dsh/plugin-cache/` 后复制 skills/ 与 preset/ 到对应目录。
@@ -121,7 +122,6 @@ cd ~/workspace/dsh-ui-tweaks && pnpm install    # 装依赖（官方 @deepseek-a
 
 # 从本地 link 装（替换 github 源）
 dsh plugin --profile web add ~/workspace/dsh-ui-tweaks
-dsh plugin --profile web add ~/workspace/dsh-work
 ```
 
 之后直接在 `~/workspace/dsh-ui-tweaks/` 改代码，浏览器硬刷新即生效；
@@ -146,10 +146,11 @@ repos, skills stay in the `dsh-skills` monorepo, third-party forks stay
 independent (see [plugins.json](plugins.json)); this repo holds the manifest,
 install scripts, and docs. All plugins install from GitHub.
 
-- `dsh-memory`, `dsh-visualize`, `dsh-work`, `dsh-usage-plugin` — standalone repos;
+- `dsh-memory`, `dsh-visualize`, `dsh-usage-plugin` — standalone repos;
   `dsh-ui-tweaks` — standalone repo (base input + UI enhancements + desktop notifications,
   merged from former essentials; `dsh-core` was inlined and removed 2026-08-19;
-  `dsh-usage-plugin` decoupled from upstream and became first-party 2026-08-19);
+  `dsh-usage-plugin` decoupled from upstream and became first-party 2026-08-19;
+  `dsh-work` retired 2026-08-20 — overlaps the official rc.8 Agent Teams runtime);
   `dsh-model-fix` — standalone host-only repo (stream-termination fix for models whose
   provider never sends `finish_reason`/`[DONE]`, e.g. opencode's muse-spark-1.2).
 - `dsh-skills` — monorepo: `dsh-dev`, `dsh-writing` (39 writing skills), `dsh-design`.

@@ -1,8 +1,8 @@
 # THIRD-PARTY.md — 第三方插件治理：fork / 收编与本地修改追踪
 
 **2026-08-19 架构定型 v3（自研独立 / 技能合并 / 第三方独立）**：自研 bundle 插件为
-5 个独立仓库（`dsh-memory`/`dsh-visualize`/`dsh-ui-tweaks`/
-`dsh-work` + `dsh-usage-plugin`（同日脱钩内化改自研）；`dsh-essentials` 已于
+4 个独立仓库（`dsh-memory`/`dsh-visualize`/`dsh-ui-tweaks`/`dsh-usage-plugin`
+（同日脱钩内化改自研）；`dsh-essentials` 已于
 2026-08-19 并入 dsh-ui-tweaks，路由预设删除；
 `dsh-core` 因无多消费者同日内联清理删除），
 技能包保持 `dsh-skills` 3 子包合并仓，第三方 fork 保持独立。来源真相见
@@ -63,7 +63,7 @@
 | [dsh-market](https://github.com/bitterSmilezzz/dsh-market) | dsh-market/dsh-market（v1.9.0，459★） | MIT | ① **lib/ 构建产物入库**（上游 .gitignore 忽略 lib/，源码仓库无 lib；本地安装/链接会缺 `lib/index.js`，故移除 .gitignore 的 `lib/` 并提交构建产物，免构建安装）② **2026-08-19 独立仓库拆分**：移除 `prepare` 脚本（git 源安装会触发构建被 pnpm onlyBuiltDependencies 拦截）③ patch `id: dshmarket` 保持（逻辑 id） | **独立仓库（2026-08-19 拆分）**：`bitterSmilezzz/dsh-market`，filter-repo 提取历史；升级 = `git fetch upstream && git merge` 后复查修改点 |
 | [dsh-better-sidebar](https://github.com/bitterSmilezzz/dsh-better-sidebar) | omdsh-dev/DSH-better-sidebar（v0.12.2） | MIT | ① 从 npm 包收编源码（src+lib）；② **2026-08-16 合并进 essentials**：host apply + client sub_betterSidebar，新增 ws/node-pty 依赖与 webRuntime inject；终端/编辑器 chunk 仍由 host `/sidebar/bundle` 路由提供；③ **2026-08-19 独立仓库拆分**：移除 `prepare` 脚本（同 market） | **独立仓库（2026-08-19 拆分）**：`bitterSmilezzz/dsh-better-sidebar`，filter-repo 提取历史；升级 = `git fetch upstream && git merge` 后复查修改点 |
 | [dsh-ui-aqua](https://github.com/bitterSmilezzz/DSH-Transparent-UI-Plugin) | WYH66666666/DSH-Transparent-UI-Plugin（267★） | MIT | ① **改名 dsh-ui-aqua**（去官方 `@deepseek-ai/` scope，0.1.0）；② **peer 升 rc.7**（上游 rc.5 → 与本机 npm dsh rc.7 对齐）；③ **补 `dsh.bundle.patch` 声明 + files 含 cordis.patch.yml**（上游源码缺声明，npm 发布产物有、源码没有，GitHub 直装时会当普通依赖）；④ tsdown 等 rc.7 兼容微调。**内容=本地在用版本**（web profile 实测运行的，2026-08-19 确认以此为准） | **fork 维护（2026-08-18/19 拆分试点）**：fork 上游 → `bitterSmilezzz/DSH-Transparent-UI-Plugin`，main = 上游 fa0cb1f 历史 + 单 commit 承载本地能用版（7d831d6）；升级 = `git fetch upstream && git merge upstream/main` 后对照修改点复查 |
-| [dsh-work](https://github.com/bitterSmilezzz/dsh-work) | NanmiCoder/dsh-agent-teams（v0.1.5，388★，**已脱钩**） | MIT | ① **lib/ 构建产物入库**（上游 .gitignore 忽略 lib/，源码仓库无 lib；移除 .gitignore 的 lib/ 并提交构建产物，免构建安装）② **2026-08-16 改名收编为 dsh-work**：package name / cordis patch / 代码内 `dsh-agent-teams`→`dsh-work` 全量替换，repository/homepage 指向本仓库 | **已脱离上游，按第一方维护**（独立仓库；上游更新 cherry-pick 参考） |
+| ~~dsh-work~~（已退役 2026-08-20） | NanmiCoder/dsh-agent-teams（v0.1.5，388★，**已脱钩**） | MIT | ① **lib/ 构建产物入库**（上游 .gitignore 忽略 lib/，源码仓库无 lib；移除 .gitignore 的 lib/ 并提交构建产物，免构建安装）② **2026-08-16 改名收编为 dsh-work**：package name / cordis patch / 代码内 `dsh-agent-teams`→`dsh-work` 全量替换，repository/homepage 指向本仓库 | **已退役（2026-08-20）**：与官方 rc.8 内置 Agent Teams 运行时功能重复，已从 web profile 卸载并从 plugins.json/README 清仓；独立仓库保留历史 |
 | [dsh-writing（skills/）](https://github.com/bitterSmilezzz/dsh-skills) | imraywang/wewrite (MIT) · Gracker/gracker-writing (MIT) · zLanqing/codex-claude-academic-skills (MIT, 仅 research-writing-skill) · aiworkskills/wechat-article-skills (Apache-2.0) · Jeffallan/writing-with-agents (MIT) · Mouriya-Emma/writing-pipeline-zh (MIT) · Hyacehila/tech-blog-writing (Apache-2.0) | MIT / Apache-2.0 | 原样复制 skill 目录，无代码修改；各来源 LICENSE 收在 `dsh-writing/licenses/`；codex 只收 `research-writing-skill`（office/scientific 子包未收） | 跟随上游（2026-08-16 收编于 dsh-skills 子包；升级 = 重新拉取对应仓库并对照 `licenses/` 复查） |
 | [external/browser-skill](external/browser-skill/)（meta-repo 内）| Tencent/BrowserSkill（MIT） | MIT | 仅收 SKILL.md（纯技能包），不收 DSH 插件（11 个 browser_* 工具超标，违反 Pi「>10 必须拆分」红线）；bsk CLI + Chrome 扩展由用户按 AGENT_INSTALL.md 自行安装 | 跟随上游（仅同步 SKILL.md；升级 = 重新拉取 skill/SKILL.md 覆盖） |
 
@@ -152,4 +152,6 @@
 - **无本地修改** → 跟随上游：登记上游 URL 或 `subtree pull`。
 - **有本地修改** → **fork 上游 + 本地 commit**：本地与上游并存，升级 merge 后复查修改点；
   若修改与上游方向冲突（如 paste-input 的本地化/脱钩），以本地为准，必要时脱钩后按第一方维护。
-- **已脱钩**（at-file / paste-input / dsh-work）→ 第一方维护，独立仓库（已拆分）。
+- **已脱钩**（at-file / paste-input）→ 第一方维护，独立仓库（已拆分）。
+- **dsh-work 已退役（2026-08-20）**：与官方 rc.8 内置 Agent Teams 运行时功能重复，
+  已从 web profile 卸载并从 plugins.json/README 清仓；独立仓库 `bitterSmilezzz/dsh-work` 保留历史。

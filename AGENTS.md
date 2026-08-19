@@ -11,8 +11,9 @@
 
 ## 仓库概况
 
-- **DSH 场景化插件 meta-repo（纯汇总仓库）**：自研 bundle 插件为 5 个独立仓库（essentials
-  已并入 ui-tweaks，dsh-core 已内联清理删除，dsh-usage-plugin 同日脱钩内化改自研），
+- **DSH 场景化插件 meta-repo（纯汇总仓库）**：自研 bundle 插件为 4 个独立仓库（essentials
+  已并入 ui-tweaks，dsh-core 已内联清理删除，dsh-usage-plugin 同日脱钩内化改自研，
+  dsh-work 已于 2026-08-20 因与官方 rc.8 Agent Teams 重复退役），
   技能包保持 dsh-skills 合并仓，第三方 fork
   保持独立（2026-08-19
   定型）；本仓库只维护 `plugins.json`（来源真相，见 [README.md](README.md#目录)）、
@@ -21,9 +22,9 @@
   复制到 `~/.agents/skills`。
 - **插件清单**（均在 `bitterSmilezzz/` 下，见 `plugins.json`）：
   - **自研 bundle（独立仓库）**：`dsh-memory`、`dsh-visualize`、
-    `dsh-ui-tweaks`、`dsh-work`、`dsh-usage-plugin`（2026-08-19 从合并仓拆回独立仓库；
+    `dsh-ui-tweaks`、`dsh-usage-plugin`（2026-08-19 从合并仓拆回独立仓库；
     同日 essentials 并入 dsh-ui-tweaks，直接 `github:<repo>#<ref>` 安装；dsh-core 因无多消费者
-    同日内联清理删除；dsh-usage-plugin 同日脱钩内化改自研）
+    同日内联清理删除；dsh-usage-plugin 同日脱钩内化改自研；dsh-work 2026-08-20 退役清仓）
   - **技能合并仓**：`dsh-skills`（子包 dsh-dev/writing/design，经 `&path:/<子包>` 安装）
   - **第三方 fork（独立）**：`dsh-better-sidebar`、`dsh-market`、
     `DSH-Transparent-UI-Plugin`（aqua）
