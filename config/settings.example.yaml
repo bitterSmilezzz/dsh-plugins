@@ -1,0 +1,1558 @@
+# dsh-essentials 脱敏 settings 模板（无任何 API key / token / secret）
+# 安装器可参考本文件合并到 ~/.dsh/settings.yaml；具体合并由安装器/用户按需执行。
+# 包含：agent-default-model、ui-theme、llm-pi-ai 完整自定义路由目录、llm-deepseek retry。
+# 注意：permission.defaultPreset=danger-full-access 是本地高权限配置，模板默认注释掉，请自行决定。
+
+agent-default-model:
+  provider: jiyuanlvdong2
+  model: deepseek-v4-flash-0731
+  reasoningEffort: max
+ui-theme:
+  preference: light
+llm-pi-ai:
+  providers:
+    opencode-go:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      models:
+        - id: minimax-m3
+          name: MiniMax-M3
+          contextWindow: 1000000
+          maxTokens: 131072
+        - id: qwen3.7-max
+          name: Qwen3.7 Max
+          contextWindow: 1000000
+          maxTokens: 65536
+        - id: qwen3.7-plus
+          name: Qwen3.7 Plus
+          contextWindow: 1000000
+          maxTokens: 65536
+        - id: deepseek-v4-flash
+          name: DeepSeek V4 Flash
+          contextWindow: 1000000
+          maxTokens: 384000
+        - id: deepseek-v4-pro
+          name: DeepSeek V4 Pro
+          contextWindow: 1000000
+          maxTokens: 384000
+        - id: glm-5.1
+          name: GLM-5.1
+          contextWindow: 202752
+          maxTokens: 32768
+        - id: glm-5.2
+          name: GLM-5.2
+          contextWindow: 1000000
+          maxTokens: 131072
+        - id: hy3
+          name: Hy3
+          contextWindow: 256000
+          maxTokens: 64000
+        - id: kimi-k2.6
+          name: Kimi K2.6
+          contextWindow: 262144
+          maxTokens: 65536
+        - id: kimi-k2.7-code
+          name: Kimi K2.7 Code
+          contextWindow: 262144
+          maxTokens: 262144
+        - id: kimi-k3
+          name: Kimi K3 (2x usage)
+          contextWindow: 1048576
+          maxTokens: 131072
+        - id: mimo-v2.5
+          name: MiMo V2.5
+          contextWindow: 1000000
+          maxTokens: 128000
+        - id: mimo-v2.5-pro
+          name: MiMo V2.5 Pro
+          contextWindow: 1048576
+          maxTokens: 128000
+        - id: minimax-m2.7
+          name: MiniMax-M2.7
+          contextWindow: 204800
+          maxTokens: 131072
+        - id: qwen3.6-plus
+          name: Qwen3.6 Plus
+          contextWindow: 1000000
+          maxTokens: 65536
+        - id: grok-4.5
+          name: Grok 4.5
+          contextWindow: 500000
+          maxTokens: 500000
+      apiKeyEnv: OPENCODE_GO_API_KEY
+    xiaomi:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      models:
+        - id: mimo-v2-flash
+          name: MiMo-V2-Flash
+          contextWindow: 262144
+          maxTokens: 65536
+        - id: mimo-v2-omni
+          name: MiMo-V2-Omni
+          contextWindow: 262144
+          maxTokens: 131072
+        - id: mimo-v2-pro
+          name: MiMo-V2-Pro
+          contextWindow: 1048576
+          maxTokens: 131072
+        - id: mimo-v2.5
+          name: MiMo-V2.5
+          contextWindow: 1048576
+          maxTokens: 131072
+        - id: mimo-v2.5-pro
+          name: MiMo-V2.5-Pro
+          contextWindow: 1048576
+          maxTokens: 131072
+        - id: mimo-v2.5-pro-ultraspeed
+          name: MiMo-V2.5-Pro-UltraSpeed
+          contextWindow: 1048576
+          maxTokens: 131072
+      apiKeyEnv: XIAOMI_API_KEY
+    zai:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      models:
+        - id: glm-4.5-air
+          name: GLM-4.5-Air
+          contextWindow: 131072
+          maxTokens: 98304
+        - id: glm-4.7
+          name: GLM-4.7
+          contextWindow: 204800
+          maxTokens: 131072
+        - id: glm-5-turbo
+          name: GLM-5-Turbo
+          contextWindow: 200000
+          maxTokens: 131072
+        - id: glm-5.1
+          name: GLM-5.1
+          contextWindow: 200000
+          maxTokens: 131072
+        - id: glm-5.2
+          name: GLM-5.2
+          contextWindow: 1000000
+          maxTokens: 131072
+        - id: glm-5v-turbo
+          name: GLM-5V-Turbo
+          contextWindow: 200000
+          maxTokens: 131072
+      apiKeyEnv: ZAI_API_KEY
+    longcat:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      displayName: longcat
+      apiKeyEnv: LONGCAT_API_KEY
+      api: openai-completions
+      baseURL: https://api.longcat.chat/openai
+      compat:
+        thinkingFormat: deepseek
+      models:
+        - id: LongCat-2.0
+          name: LongCat-2.0
+          contextWindow: 1048576
+          maxTokens: 131072
+          reasoningEfforts:
+            'off': null
+            low: low
+            high: high
+    agnes:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      apiKeyEnv: AGNES_API_KEY
+      api: openai-completions
+      baseURL: https://apihub.agnes-ai.com/v1
+      models:
+        - id: agnes-2.0-flash
+        - id: agnes-image-2.0-flash
+        - id: agnes-2.5-flash
+        - id: agnes-2.5-pro-alpha
+        - id: agnes-image-2.1-flash
+        - id: agnes-2.5-pro
+        - id: agnes-video-v2.0
+    opencode-go2:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      displayName: opencode-go2
+      apiKeyEnv: OPENCODE_GO2_API_KEY
+      api: openai-completions
+      baseURL: https://opencode.ai/zen/go/v1
+      models:
+        - id: minimax-m3
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: minimax-m2.7
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: minimax-m2.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k3
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: kimi-k2.7-code
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.6
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+        - id: kimi-k2.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: glm-5.2
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: glm-5.1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: glm-5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v4-pro
+          contextWindow: 1000000
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v4-flash
+          contextWindow: 1000000
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-max
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.8-max
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.6-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: mimo-v2-pro
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: mimo-v2-omni
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: mimo-v2.5-pro
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: mimo-v2.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: hy3
+          reasoningEfforts:
+            'off': none
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: hy3-preview
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: gpt-5.6-luna
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: grok-4.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+    jiyuanlvdong:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      displayName: 基元律动
+      apiKeyEnv: JIYUANLVDONG_API_KEY
+      api: openai-completions
+      baseURL: https://tokenrhythm.studio/v1
+      models:
+        - id: deepseek-v4-flash
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+          contextWindow: 1000000
+        - id: deepseek-v4-pro
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+          contextWindow: 1000000
+        - id: glm-5
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: glm-5.1
+          contextWindow: 200000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: minimax-m2.7
+          contextWindow: 200000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.5
+          contextWindow: 256000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.6
+          contextWindow: 256000
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+        - id: minimax-m2.5
+          contextWindow: 200000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: mimo-v2.5-pro
+          contextWindow: 256000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-max
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.7-code
+          contextWindow: 256000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: glm-5.2
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: qwen3.8-max
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v4-flash-0731
+          input:
+            - text
+            - image
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+          contextWindow: 1000000
+        - id: seed-2.1-turbo
+          contextWindow: 262144
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: seed-2.1-pro
+          contextWindow: 262144
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+    jiyuanlvdong2:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      displayName: 基元律动2
+      apiKeyEnv: JIYUANLVDONG2_API_KEY
+      api: openai-completions
+      baseURL: https://tokenrhythm.studio/v1
+      models:
+        - id: deepseek-v4-flash
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: deepseek-v4-pro
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: glm-5
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: glm-5.1
+          contextWindow: 200000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: minimax-m2.7
+          contextWindow: 200000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.5
+          contextWindow: 256000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.6
+          contextWindow: 256000
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+        - id: minimax-m2.5
+          contextWindow: 200000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: mimo-v2.5-pro
+          contextWindow: 256000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-max
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.7-code
+          contextWindow: 256000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: glm-5.2
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: qwen3.8-max
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v4-flash-0731
+          contextWindow: 1000000
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: seed-2.1-turbo
+          contextWindow: 262144
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: seed-2.1-pro
+          contextWindow: 262144
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+    qwen:
+      retryPolicy:
+        mode: normal
+        maxRetries: 10
+      displayName: 千问
+      apiKeyEnv: QWEN_API_KEY
+      api: openai-completions
+      baseURL: https://dashscope.aliyuncs.com/compatible-mode/v1
+      models:
+        - id: qwen3.8-2.4t-a95b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen-image-3.0-pro
+        - id: qwen-image-3.0
+        - id: qwen3.8-max
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v4-flash-0731
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen-audio-3.0-asr-flash
+        - id: qwen3.7-flash-2026-07-15
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-flash
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi/kimi-k3
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-text-embedding
+        - id: qwen-audio-3.0-realtime-flash
+        - id: qwen-audio-3.0-realtime-plus
+        - id: glm-5.2-fast-preview
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi/kimi-k2.7-code-highspeed
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: xiaomi/mimo-v2.5-pro
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: MiniMax/MiniMax-M3
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: ZHIPU/GLM-5.2
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen-image-2.0-pro-2026-06-22
+        - id: test-sre-gpu-auto-handle
+        - id: fun-asr-flash-2026-06-15
+        - id: glm-5.2
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: kimi/kimi-k2.7-code
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.7-code
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: sre-gpu-auto-handle
+        - id: qwen3.7-max-2026-06-08
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-ocr
+        - id: qwen3.7-plus-2026-05-26
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-max-2026-05-17
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-max-preview
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: ZHIPU/GLM-5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-max-2026-05-20
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.7-max
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-livetranslate-flash-realtime-2026-05-19
+        - id: qwen3.5-livetranslate-flash-realtime
+        - id: ZHIPU/GLM-5.1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi/kimi-k2.6
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v4-flash
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: deepseek-v4-pro
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+            max: max
+        - id: qwen-image-2.0-pro-2026-04-22
+        - id: qwen3.5-plus-2026-04-20
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.6-27b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi-k2.6
+          reasoningEfforts:
+            minimal: minimal
+            low: low
+            medium: medium
+        - id: qwen3.6-max-preview
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.6-35b-a3b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.6-flash-2026-04-16
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.6-flash
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: glm-5.1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: vanchin/deepseek-v3.1-terminus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: vanchin/deepseek-v3
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: vanchin/deepseek-r1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: vanchin/deepseek-ocr
+        - id: vanchin/deepseek-v3.2-think
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-omni-plus-realtime-2026-03-15
+        - id: qwen3.5-omni-plus-realtime
+        - id: qwen3.5-omni-plus-2026-03-15
+        - id: qwen3.5-omni-plus
+        - id: qwen3.5-omni-flash-realtime-2026-03-15
+        - id: qwen3.5-omni-flash-realtime
+        - id: qwen3.5-omni-flash-2026-03-15
+        - id: qwen3.5-omni-flash
+        - id: qwen3.6-plus-2026-04-02
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.6-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: wan2.7-image-pro
+        - id: wan2.7-image
+        - id: MiniMax/MiniMax-M2.7
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: MiniMax/speech-2.8-hd
+        - id: MiniMax/speech-2.8-turbo
+        - id: MiniMax/speech-02-turbo
+        - id: MiniMax/speech-02-hd
+        - id: qwen-deep-research-2025-12-15
+        - id: qwen-image-2.0-2026-03-03
+        - id: qwen-image-2.0-pro
+        - id: qwen-image-2.0-pro-2026-03-03
+        - id: qwen-image-2.0
+        - id: qwen3-asr-flash-2026-02-10
+        - id: glm-5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen-flash-character-2026-02-26
+        - id: MiniMax-M2.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-flash-2026-02-23
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-flash
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-122b-a10b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-35b-a3b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-27b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-coder-next
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-397b-a17b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-plus-2026-02-15
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3.5-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-asr-flash-realtime-2026-02-10
+        - id: MiniMax/MiniMax-M2.1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: MiniMax/MiniMax-M2.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: kimi/kimi-k2.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-tts-vd-2026-01-26
+        - id: qwen3-tts-instruct-flash-2026-01-26
+        - id: qwen3-tts-instruct-flash
+        - id: qwen3-tts-vc-2026-01-22
+        - id: glm-4.7
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-max
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-tts-instruct-flash-realtime-2026-01-22
+        - id: qwen3-tts-instruct-flash-realtime
+        - id: qwen3-tts-vd-realtime-2026-01-15
+        - id: kimi-k2.5
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: tongyi-xiaomi-analysis-flash
+        - id: tongyi-xiaomi-analysis-pro
+        - id: siliconflow/deepseek-v3.2
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: siliconflow/deepseek-v3.1-terminus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: siliconflow/deepseek-v3-0324
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: siliconflow/deepseek-r1-0528
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: MiniMax-M2.1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-vl-flash-2026-01-22
+        - id: qwen3-max-2026-01-23
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-tts-vc-realtime-2026-01-15
+        - id: qwen-image-edit-max-2026-01-16
+        - id: qwen-image-edit-max
+        - id: qwen-image-plus-2026-01-09
+        - id: qwen-flash-character
+        - id: qwen-image-max-2025-12-30
+        - id: qwen-image-max
+        - id: qwen-flash
+        - id: z-image-turbo
+        - id: qwen3-vl-plus-2025-12-19
+        - id: qwen3-tts-vd-realtime-2025-12-16
+        - id: qwen-image-edit-plus-2025-12-15
+        - id: deepseek-v3.2
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-omni-flash-2025-12-01
+        - id: qwen3-omni-flash-realtime-2025-12-01
+        - id: qwen3-livetranslate-flash-2025-12-01
+        - id: qwen3-livetranslate-flash
+        - id: qwen-plus-2025-12-01
+        - id: qwen3-tts-vc-realtime-2025-11-27
+        - id: qwen3-tts-flash-2025-11-27
+        - id: qwen3-tts-flash-realtime-2025-11-27
+        - id: qwen-plus-2025-11-05
+        - id: qwen-mt-lite
+        - id: qwen-vl-ocr-2025-11-20
+        - id: kimi-k2-thinking
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen-mt-flash
+        - id: gui-plus
+        - id: qwen-image-edit-plus-2025-10-30
+        - id: qwen-image-edit-plus
+        - id: qwen-deep-search-planning
+        - id: qwen3-asr-flash-realtime-2025-10-27
+        - id: qwen3-asr-flash-realtime
+        - id: qwen3-vl-flash
+        - id: qwen3-vl-flash-2025-10-15
+        - id: qwen3-tts-flash
+        - id: qwen3-tts-flash-2025-09-18
+        - id: qwen3-tts-flash-realtime-2025-09-18
+        - id: qwen3-tts-flash-realtime
+        - id: qwen3-omni-flash-realtime
+        - id: qwen3-omni-flash
+        - id: qwen3-omni-flash-2025-09-15
+        - id: qwen3-omni-flash-realtime-2025-09-15
+        - id: qwen3-s2s-flash-realtime-2025-09-22
+        - id: qwen3-livetranslate-flash-realtime
+        - id: qwen3-livetranslate-flash-realtime-2025-09-22
+        - id: qwen-turbo-2024-11-01
+        - id: qwen-plus-2025-01-25
+        - id: qwq-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qvq-max
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen-omni-turbo
+        - id: qwen-plus-2025-04-28
+        - id: qwen3-235b-a22b-instruct-2507
+        - id: qwen3-235b-a22b-thinking-2507
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-30b-a3b-thinking-2507
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-30b-a3b-instruct-2507
+        - id: qwen3-coder-flash
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-coder-plus-2025-09-23
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-max-2025-09-23
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-vl-plus
+        - id: qwen3-vl-plus-2025-09-23
+        - id: qwen-plus-2025-09-11
+        - id: qwen3-next-80b-a3b-thinking
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-next-80b-a3b-instruct
+        - id: qwen3-max-preview
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v3.1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-coder-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-coder-plus-2025-07-22
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen-plus-2025-07-14
+        - id: qwen3-coder-480b-a35b-instruct
+        - id: qwen-mt-turbo
+        - id: qwen-mt-plus
+        - id: qwen-tts-2025-05-22
+        - id: qvq-plus
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-32b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-30b-a3b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-235b-a22b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-14b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen3-8b
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-v3
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: deepseek-r1-distill-llama-70b
+        - id: deepseek-r1-distill-qwen-32b
+        - id: deepseek-r1-distill-qwen-14b
+        - id: deepseek-r1-distill-llama-8b
+        - id: deepseek-r1-distill-qwen-1.5b
+        - id: deepseek-r1-distill-qwen-7b
+        - id: deepseek-r1
+          reasoningEfforts:
+            'off': null
+            minimal: minimal
+            low: low
+            medium: medium
+            high: high
+            max: max
+        - id: qwen1.5-7b-chat
+        - id: qwen-vl-ocr-latest
+        - id: qwen-vl-ocr
+        - id: qwen-coder-plus-1106
+        - id: qwen-coder-plus
+        - id: qwen2.5-1.5b-instruct
+        - id: qwen2.5-math-1.5b-instruct
+        - id: qwen-turbo-0919
+        - id: qwen2.5-0.5b-instruct
+        - id: qwen-math-plus
+        - id: qwen-plus-latest
+        - id: qwen-math-turbo
+        - id: qwen-math-plus-latest
+        - id: qwen-math-plus-0919
+        - id: qwen-coder-turbo
+        - id: qwen2-1.5b-instruct
+        - id: qwen2-7b-instruct
+        - id: qwen2-57b-a14b-instruct
+        - id: qwen2-0.5b-instruct
+        - id: qwen-long
+        - id: qwen-vl-max
+        - id: qwen-vl-plus
+        - id: qwen1.5-110b-chat
+        - id: codeqwen1.5-7b-chat
+        - id: qwen1.5-0.5b-chat
+        - id: qwen-1.8b-chat
+        - id: qwen-1.8b-longcontext-chat
+        - id: qwen-7b-chat
+        - id: qwen-14b-chat
+        - id: qwen-72b-chat
+        - id: qwen-max-longcontext
+        - id: qwen1.5-72b-chat
+        - id: qwen1.5-1.8b-chat
+        - id: qwen1.5-32b-chat
+        - id: qwen1.5-14b-chat
+        - id: qwen-max-1201
+        - id: qwen-max-0107
+        - id: qwen-max
+        - id: qwen-turbo
+        - id: qwen-plus
+      compat:
+        supportsDeveloperRole: false
+
+# agent-presets:
+#   default: router-standard
+
+# permission:
+#   defaultPreset: danger-full-access   # 高风险，默认不随模板分发
+
+# dsh-better-sidebar:
+#   tabsEnabled:
+#     explorer: true
+#   openByDefault: false
+
+llm-deepseek:
+  retryPolicy:
+    mode: normal
+    maxRetries: 10

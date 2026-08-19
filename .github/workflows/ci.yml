@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: dsh-core unit tests
+        run: node --test dsh-core/test/*.test.mjs
+
+      - name: Package consistency
+        run: node scripts/check-package-consistency.mjs
+
+      - name: Inject consistency
+        run: node scripts/check-inject-consistency.mjs
+
+      - name: Skill pack verification (dev)
+        run: node dsh-dev/scripts/verify-skills.mjs
+
+      - name: Skill pack verification (design)
+        run: node dsh-design/scripts/verify-skills.mjs
+
+      - name: Skill pack verification (writing)
+        run: node dsh-writing/scripts/verify-skills.mjs
+
+      - name: Installer dry-run (all)
+        run: bash scripts/install.sh --dry-run
+
+      - name: Settings apply dry-run
+        run: node scripts/apply-settings.mjs --dry-run --settings /tmp/nonexistent-settings.yaml
+
+      - name: Benchmark
+        run: node scripts/benchmark.mjs --ci
+
+      - name: External manifest dry-run
+        run: node scripts/install-external.mjs --dry-run

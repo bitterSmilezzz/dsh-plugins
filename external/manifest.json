@@ -1,0 +1,22 @@
+{
+  "browser": {
+    "name": "dsh-browser + Chrome 扩展",
+    "source": "https://github.com/Lum1104/dsh-browser",
+    "license": "MIT",
+    "managedPath": "~/.dsh/dsh-browser",
+    "extensionPath": "~/.dsh/browser-extension",
+    "installHint": "clone 到 ~/.dsh/dsh-browser 后按上游 README 安装 bridge bundle，Chrome 加载 ~/.dsh/browser-extension（或可见副本 ~/dsh-browser-extension）。"
+  },
+  "browser-skill": {
+    "name": "BrowserSkill (Tencent) — bsk CLI + Chrome 扩展 + skill",
+    "source": "https://github.com/Tencent/BrowserSkill",
+    "license": "MIT",
+    "installHint": "纯技能包：SKILL.md 由 scripts/install.sh --scenario browser 复制到 ~/.agents/skills/browser-skill/。bsk CLI 需单独安装（curl -fsSL https://raw.githubusercontent.com/Tencent/BrowserSkill/main/install.sh | sh），Chrome 扩展需手动从 Chrome Web Store 加载。"
+  },
+  "dsh-tui": {
+    "name": "DSH TUI",
+    "source": "npm:@deepseek-harness-tui/dsh-tui",
+    "license": "MIT",
+    "installHint": "全局安装 launcher 后使用独立 dsh-tui profile；profile bundle 为 @deepseek-ai/dsh-base + @deepseek-harness-tui/dsh-tui。"
+  }
+}

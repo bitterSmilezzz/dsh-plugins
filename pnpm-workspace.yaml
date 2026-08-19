@@ -1,7 +1,0 @@
-packages:
-  - 'dsh-*'
-
-nodeLinker: hoisted
-autoInstallPeers: true
-onlyBuiltDependencies:
-  - node-pty

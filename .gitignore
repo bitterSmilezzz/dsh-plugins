@@ -1,4 +1,9 @@
-# dsh-plugins monorepo — sub-packages carry their own .gitignore.
+# Root ignores — plugins live in independent repos; this meta-repo only holds
+# manifest + scripts + docs, so the ignore list is minimal.
 node_modules/
 *.log
 .DS_Store
+.dsh/
+plugin-list.txt
+dsh-desktop-shell/
+dsh-usage/

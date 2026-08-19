@@ -1,12 +1,22 @@
 {
   "name": "dsh-plugins",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "DSH 自研插件 monorepo — dsh-core/essentials/memory/visualize/ui-tweaks/work 同仓管理，独立发布",
+  "description": "DSH 场景化插件 meta-repo — 汇总清单 + 一键/分场景安装脚本（插件均为独立仓库，见 plugins.json）",
   "type": "module",
   "scripts": {
+    "apply:settings": "node scripts/apply-settings.mjs",
+    "manifest": "node scripts/plugin-manifest.mjs list",
     "check": "node scripts/check-consistency.mjs"
   },
-  "engines": { "node": ">=20" },
-  "license": "MIT"
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
 }
