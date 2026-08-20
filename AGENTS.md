@@ -26,8 +26,8 @@
     同日 essentials 并入 dsh-ui-tweaks，直接 `github:<repo>#<ref>` 安装；dsh-core 因无多消费者
     同日内联清理删除；dsh-usage-plugin 同日脱钩内化改自研；dsh-work 2026-08-20 退役清仓）
   - **技能合并仓**：`dsh-skills`（子包 dsh-dev/writing/design，经 `&path:/<子包>` 安装）
-  - **第三方 fork（独立）**：`dsh-better-sidebar`、`dsh-market`、
-    `DSH-Transparent-UI-Plugin`（aqua）
+  - **第三方 fork（独立）**：`dsh-market`（`dsh-better-sidebar`、`DSH-Transparent-UI-Plugin`
+    （aqua）已于 2026-08-20 随 GitHub 仓库删除而下架，本地同步移除，历史存档 `doc/archives/`）
   - **自研独立**：`dsh-desktop-shell`（原生代码）
 - **依赖引用**：bundle 插件均为独立仓库，直接 `github:<repo>#<ref>` 安装；仅 dsh-skills
   技能包子包用 `&path:/<subdir>` 语法。dsh-core 已于 2026-08-19 内联清理删除
@@ -57,8 +57,8 @@ plugins.json（来源真相清单） · scripts/（install.sh 一键装 + 一致
 
 所有 GitHub 上的 dsh 插件仓库统一放在一个**伞目录**下（跨平台约定；Windows 当前为
 `D:\workspace\deepseek-harness`，macOS 参照同一约定自行设定伞目录路径）。伞目录内含各插件
-独立 git 仓库（如 `dsh-ui-tweaks`、`dsh-ui-aqua`、`dsh-desktop-shell`）、`deepseek-harness`
-源码 checkout（仅参照用）、`doc/` 本地修复/迁移记录。
+独立 git 仓库（如 `dsh-ui-tweaks`、`dsh-desktop-shell`）、`deepseek-harness`
+源码 checkout（仅参照用）、`doc/` 本地修复/迁移记录与已删仓库 git bundle 存档。
 
 **meta-repo 保持干净**：本仓库只存 `plugins.json` + 脚本 + 文档；编译产物（如 `target/`）、
 运行时数据（如 `dsh-usage/usage-records.json`）、个人待尝试清单（`plugin-list.txt`）
@@ -69,7 +69,7 @@ plugins.json（来源真相清单） · scripts/（install.sh 一键装 + 一致
 多个组件来自社区。改动前必读 [THIRD-PARTY.md](THIRD-PARTY.md)（来源 / 本地修改 / 升级流程）：
 
 - **改过的第三方 → fork 上游仓库**：本地改动以单 commit 提交在 fork 上（如
-  `bitterSmilezzz/DSH-Transparent-UI-Plugin`），升级 = `git fetch upstream && git merge
+  `bitterSmilezzz/dsh-market`），升级 = `git fetch upstream && git merge
   upstream/main` 后对照 THIRD-PARTY.md 复查修改点；不再 `subtree` 收编进汇总仓库。
 - **已脱离上游**：`dsh-at-file`（filter-repo 重写历史单作者化）、`dsh-paste-input`
   （用户决定脱钩，未重写历史——差异刻意）、`dsh-memory`（已拆独立仓库）；源码在
@@ -194,7 +194,7 @@ NOTES.md 是完整档案库（~4664 行），**禁止整读**（按需读+索引
   改用自查 + 单测矩阵。
 - **改完自动提交 + 推送**：每次改动（文档/代码/配置）完成后立即 `git add + commit`，不攒变更；对话结束后执行 `git push` 推送到远端。
   并行会话 git checkout 会清未提交工作，改完即交避免丢失；推送到远端防止本地丢失。
-- **dsh-client-ui-aqua（第三方，2026-08-18 收编）**：Aqua 玻璃质感主题（毛玻璃）client-only bundle；上游 WYH66666666/DSH-Transparent-UI-Plugin；本地修改=package.json name 去 scope 对齐 npm/patch。
+- **dsh-client-ui-aqua（已删除 2026-08-20）**：Aqua 玻璃质感主题（毛玻璃）client-only bundle；上游 WYH66666666/DSH-Transparent-UI-Plugin；本地修改=package.json name 去 scope 对齐 npm/patch。**本地在用版 `7d831d6` 已存档于伞目录 `doc/archives/DSH-Transparent-UI-Plugin-2026-08-20.bundle`**，需恢复时 clone 该 bundle 即可。
 - **文件编码铁律**：仓库文件多为 UTF-8 + CRLF。**禁止用 PowerShell `Set-Content` 改含中文的文件**（按 GBK 解释 UTF-8 → U+FFFD mojibake，且已 push 会污染远端历史）。改 UTF-8 文件用 Node `readFileSync(...,'utf8')` + `writeFileSync(...,'utf8')`，或用 `str_replace_editor`（匹配须含 CRLF）。改坏后用 `git show` 找最后正常 commit 恢复再重放。
 
 ### 脚本与治理
