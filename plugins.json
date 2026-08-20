@@ -1,5 +1,5 @@
 {
- "$comment": "dsh-plugins 汇总仓库插件清单 — 来源真相（source of truth）。2026-08-19 架构 v3：自研插件拆分为独立仓库（memory/visualize/ui-tweaks/work；essentials 已并入 ui-tweaks，2026-08-19；dsh-core 因无多消费者于 2026-08-19 内联清理删除），技能包保持 dsh-skills 合并仓（3 子包）；第三方 fork 保持独立（需跟上游 merge）；desktop-shell 独立。2026-08-20：dsh-better-sidebar 与 DSH-Transparent-UI-Plugin（aqua）GitHub 仓库删除，随之下架清仓（完整历史已存档于 doc/archives/ git bundle）。type: bundle(真 bundle，dsh plugin add) | skills(纯技能包，复制 skills/) | preset(预设)。origin: first-party(自研) | third-party-fork(第三方 fork+本地改动)。repo 指向插件独立仓库；技能包子包经 path 语法安装（github:<repo>#<ref>&path:/<subdir>）。",
+ "$comment": "dsh-plugins 汇总仓库插件清单 — 来源真相（source of truth）。2026-08-19 架构 v3：自研插件拆分为独立仓库（memory/visualize/ui-tweaks/work；essentials 已并入 ui-tweaks，2026-08-19；dsh-core 因无多消费者于 2026-08-19 内联清理删除），技能包保持 dsh-skills 合并仓（3 子包）；第三方 fork 保持独立（需跟上游 merge）；desktop-shell 独立。2026-08-20：dsh-better-sidebar 与 DSH-Transparent-UI-Plugin（aqua）GitHub 仓库删除，随之下架清仓（完整历史已存档于 doc/archives/ git bundle）；同日 dsh-model-fix 归档（完整历史已存档于 doc/archives/dsh-model-fix-2026-08-20.bundle）。type: bundle(真 bundle，dsh plugin add) | skills(纯技能包，复制 skills/) | preset(预设)。origin: first-party(自研) | third-party-fork(第三方 fork+本地改动)。repo 指向插件独立仓库；技能包子包经 path 语法安装（github:<repo>#<ref>&path:/<subdir>）。",
  "schema": 3,
  "plugins": [
   {
@@ -31,16 +31,6 @@
    "origin": "first-party",
    "scenario": "all",
    "note": "基础输入(模型选择/粘贴上传/@引用/无损省token) + UI增强 + 桌面通知；2026-08-19 并入原 dsh-essentials 剩余能力(去路由预设)，单一 bundle"
-  },
-  {
-   "id": "dsh-model-fix",
-   "type": "bundle",
-   "source": "github",
-   "repo": "bitterSmilezzz/dsh-model-fix",
-   "ref": "main",
-   "origin": "first-party",
-   "scenario": "all",
-   "note": "模型流式缺陷修复：opencode 端点 muse-spark-1.2 不发送 finish_reason/[DONE]，llm/stream 收尾改 stop（直连可用、不触发重试）；host-only bundle（2026-08-19 新建）"
   },
   {
    "id": "dsh-dev",
