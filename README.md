@@ -44,9 +44,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 
 | 插件 | 类型 | 一句话 | 仓库 |
 | --- | --- | --- | --- |
-| [dsh-better-sidebar](https://github.com/bitterSmilezzz/dsh-better-sidebar) | bundle + client | 侧边栏/工作台（终端/编辑器/Git/浏览器） | fork 自 omdsh-dev/DSH-better-sidebar |
 | [dsh-market](https://github.com/bitterSmilezzz/dsh-market) | bundle + client | 可视化插件市场 | fork 自 dsh-market/dsh-market |
-| [dsh-ui-aqua](https://github.com/bitterSmilezzz/DSH-Transparent-UI-Plugin) | bundle + client | 玻璃质感主题（rc.7 本地版） | fork 自 WYH66666666/DSH-Transparent-UI-Plugin |
 | [dsh-desktop-shell](https://github.com/bitterSmilezzz/dsh-desktop-shell) | bundle | 原生桌面壳（macOS Swift + Windows Tauri） | 自研独立 |
 | [external](external/manifest.json) | 外部清单 | BrowserSkill + dsh-browser 等安装引导 | `external/manifest.json` |
 
@@ -56,8 +54,9 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 >   dsh-core（共享函数内联进消费方），现为 6 个独立仓库
 >   （memory/visualize/ui-tweaks/work/usage-plugin/model-fix），技能包仍留 dsh-skills 合并仓。
 > - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
-> - 第三方 fork（market/better-sidebar/aqua）**保持独立**（需跟上游 merge）；
->   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）。
+> - 第三方 fork（market）**保持独立**（需跟上游 merge）；
+>   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）；
+>   `dsh-better-sidebar`、`DSH-Transparent-UI-Plugin`（aqua）已于 **2026-08-20** 因 GitHub 仓库删除而下架（完整历史存档于伞目录 `doc/archives/` git bundle）。
 > - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 曾改名收编为 `dsh-work`，
 >   因与官方 rc.8 内置 Agent Teams 运行时功能重复已于 2026-08-20 退役清仓。
 > - `dsh-notify`（系统通知）已并入 `dsh-ui-tweaks`，代码级重构为单一 bundle。
@@ -83,7 +82,7 @@ cd deepseek-plugins
 bash scripts/install.sh
 ```
 
-`--all`（默认）安装**全部插件**：自研 5 bundle（独立仓库）+ 3 个第三方 fork +
+`--all`（默认）安装**全部插件**：自研 5 bundle（独立仓库）+ 1 个第三方 fork +
 3 个技能包。安装来源以 [plugins.json](plugins.json) 为真相：
 bundle 全部从 GitHub 直装（`github:<repo>#<ref>`），技能包子包用 `&path:/<subdir>`；
 纯技能包 clone 到 `~/.dsh/plugin-cache/` 后复制 skills/ 与 preset/ 到对应目录。
@@ -125,7 +124,7 @@ dsh plugin --profile web add ~/workspace/dsh-ui-tweaks
 ```
 
 之后直接在 `~/workspace/dsh-ui-tweaks/` 改代码，浏览器硬刷新即生效；
-改完 `git add + commit + push` 同步到远端。第三方 fork（better-sidebar/market 等）各自独立，
+改完 `git add + commit + push` 同步到远端。第三方 fork（dsh-market 等）各自独立，
 同样可 clone 到 `~/workspace/` 做 link 开发。
 
 ## 配置
@@ -154,8 +153,9 @@ install scripts, and docs. All plugins install from GitHub.
   `dsh-model-fix` — standalone host-only repo (stream-termination fix for models whose
   provider never sends `finish_reason`/`[DONE]`, e.g. opencode's muse-spark-1.2).
 - `dsh-skills` — monorepo: `dsh-dev`, `dsh-writing` (39 writing skills), `dsh-design`.
-- `dsh-better-sidebar`, `dsh-market`,
-  `DSH-Transparent-UI-Plugin` (aqua) — third-party forks (independent, track upstream).
+- `dsh-market` — third-party fork (independent, tracks upstream; removed 2026-08-20:
+  `dsh-better-sidebar` and `DSH-Transparent-UI-Plugin`/aqua were deleted on GitHub,
+  delisted here, history preserved as git bundles under the umbrella `doc/archives/`).
 - `dsh-desktop-shell` — native desktop shell (macOS Swift + Windows Tauri).
 - `external/` — browser/TUI install manifest.
 

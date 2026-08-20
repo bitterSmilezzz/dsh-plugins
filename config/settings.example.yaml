@@ -1547,10 +1547,8 @@ llm-pi-ai:
 # permission:
 #   defaultPreset: danger-full-access   # 高风险，默认不随模板分发
 
-# dsh-better-sidebar:
-#   tabsEnabled:
-#     explorer: true
-#   openByDefault: false
+# （2026-08-20：dsh-better-sidebar fork 已随 GitHub 仓库删除下架，示例段移除；
+#  侧边栏用官方 @deepseek-ai/dsh-client-ui-sidebar，设置键不同且无需本地模板。）
 
 llm-deepseek:
   retryPolicy:
