@@ -23,6 +23,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 > **2026-08-20**：`dsh-work`（agent-teams 收编版）因与官方 rc.8 内置 Agent Teams 运行时功能重复，已退役清仓；
 > `dsh-model-fix`（muse-spark-1.2 流式收尾修复）同日归档（完整历史存档于伞目录 `doc/archives/dsh-model-fix-2026-08-20.bundle`）。
 > **2026-08-21**：`dsh-market` 与 `dsh-usage-plugin` 卸载清仓（web profile 卸载 + GitHub 仓库删除，完整历史存档于伞目录 `doc/archives/` git bundle）；`dsh-visualize` 本地暂停使用、仓库保留待验证。
+> **同日晚**：`DSH-Transparent-UI-Plugin`（aqua，包名 `dsh-ui-aqua`）从存档 bundle 恢复为**按需可选**——本地仓库恢复至伞目录并 link 进 web profile，GitHub fork 未恢复、**不入默认安装清单**（见 [THIRD-PARTY.md](THIRD-PARTY.md)）。
 
 ### 自研插件（独立仓库）
 
@@ -46,6 +47,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | 插件 | 类型 | 一句话 | 仓库 |
 | --- | --- | --- | --- |
 | [dsh-desktop-shell](https://github.com/bitterSmilezzz/dsh-desktop-shell) | bundle | 原生桌面壳（macOS Swift + Windows Tauri） | 自研独立 |
+| DSH-Transparent-UI-Plugin（`dsh-ui-aqua`） | bundle（client-only） | Aqua 玻璃质感主题（毛玻璃/流体/壁纸背景）；**按需可选·不入默认清单**——本地仓库自存档 bundle 恢复（GitHub fork 已删），安装命令见 [THIRD-PARTY.md](THIRD-PARTY.md) | 上游 [WYH66666666/DSH-Transparent-UI-Plugin](https://github.com/WYH66666666/DSH-Transparent-UI-Plugin) |
 | [external](external/manifest.json) | 外部清单 | BrowserSkill + dsh-browser 等安装引导 | `external/manifest.json` |
 
 > **架构演进（2026-08-19）**：
@@ -57,7 +59,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 > - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
 > - 第三方 fork（`dsh-market`）与 `dsh-usage-plugin` 于 **2026-08-21 卸载清仓**（完整历史存档于伞目录 `doc/archives/` git bundle；usage-plugin 曾于 2026-08-19 脱钩内化改自研）。
 >   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）；
->   `dsh-better-sidebar`、`DSH-Transparent-UI-Plugin`（aqua）已于 **2026-08-20** 因 GitHub 仓库删除而下架（完整历史存档于伞目录 `doc/archives/` git bundle）。
+>   `dsh-better-sidebar`、`DSH-Transparent-UI-Plugin`（aqua）已于 **2026-08-20** 因 GitHub 仓库删除而下架（完整历史存档于伞目录 `doc/archives/` git bundle）；aqua 已于 **2026-08-21** 从存档恢复为按需可选（本地仓库，不入默认安装清单）。
 > - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 曾改名收编为 `dsh-work`，
 >   因与官方 rc.8 内置 Agent Teams 运行时功能重复已于 2026-08-20 退役清仓。
 > - `dsh-model-fix`（muse-spark-1.2 流式收尾修复）已于 **2026-08-20 归档**（完整历史存档于伞目录 `doc/archives/dsh-model-fix-2026-08-20.bundle`）。
@@ -101,6 +103,15 @@ bash scripts/install.sh -p headless --all                  # 指定 profile
 ```
 
 `dsh` 不在 PATH 时加 `--dsh`：`bash scripts/install.sh --dsh "pnpm --dir /path/to/deepseek-harness dsh"`。
+
+**Aqua 玻璃主题（按需，不在默认清单）**：本地仓库已从伞目录
+`doc/archives/DSH-Transparent-UI-Plugin-2026-08-20.bundle` 恢复到伞目录 `DSH-Transparent-UI-Plugin/`
+（GitHub fork 已删，无法 GitHub 直装；上游源码缺 bundle 声明也不可直装），需要时手动：
+
+```sh
+git clone doc/archives/DSH-Transparent-UI-Plugin-2026-08-20.bundle DSH-Transparent-UI-Plugin  # 尚未恢复时
+dsh plugin --profile web add ~/workspace/deepseek-harness/DSH-Transparent-UI-Plugin
+```
 
 ### 低层批量安装
 
@@ -156,9 +167,11 @@ install scripts, and docs. All plugins install from GitHub.
   provider never sends `finish_reason`/`[DONE]` (e.g. opencode's muse-spark-1.2), history
   preserved as a git bundle under the umbrella `doc/archives/dsh-model-fix-2026-08-20.bundle`).
 - `dsh-skills` — monorepo: `dsh-dev`, `dsh-writing` (39 writing skills), `dsh-design`.
-- `dsh-market` — third-party fork (independent, tracks upstream; removed 2026-08-20:
-  `dsh-better-sidebar` and `DSH-Transparent-UI-Plugin`/aqua were deleted on GitHub,
-  delisted here, history preserved as git bundles under the umbrella `doc/archives/`).
+- `dsh-market` — third-party fork; removed 2026-08-21 together with `dsh-better-sidebar`
+  (deleted on GitHub 2026-08-20, delisted here, history preserved as git bundles under the
+  umbrella `doc/archives/`). `DSH-Transparent-UI-Plugin`/aqua (`dsh-ui-aqua`) was restored
+  from its archive bundle on 2026-08-21 as an **optional, install-on-demand** local repo —
+  no GitHub fork, not part of the default install set (see [THIRD-PARTY.md](THIRD-PARTY.md)).
 - `dsh-desktop-shell` — native desktop shell (macOS Swift + Windows Tauri).
 - `external/` — browser/TUI install manifest.
 

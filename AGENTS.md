@@ -26,8 +26,10 @@
     同日 essentials 并入 dsh-ui-tweaks，直接 `github:<repo>#<ref>` 安装；dsh-core 因无多消费者
     同日内联清理删除；dsh-usage-plugin 脱钩内化后于 2026-08-21 卸载清仓；dsh-work 2026-08-20 退役清仓）
   - **技能合并仓**：`dsh-skills`（子包 dsh-dev/writing/design，经 `&path:/<子包>` 安装）
-  - **第三方 fork（独立）**：无（`dsh-market` 于 2026-08-21 卸载清仓；`dsh-better-sidebar`、`DSH-Transparent-UI-Plugin`
-    （aqua）已于 2026-08-20 随 GitHub 仓库删除而下架，本地同步移除，历史存档 `doc/archives/`）
+  - **第三方 fork（独立）**：`DSH-Transparent-UI-Plugin`（aqua，包名 `dsh-ui-aqua`）——2026-08-20 下架、
+    **2026-08-21 从存档 bundle 恢复为按需可选**（本地伞目录仓库 link 使用，GitHub fork 未恢复，
+    不入默认安装清单）；`dsh-market` 于 2026-08-21 卸载清仓；`dsh-better-sidebar`
+    已于 2026-08-20 随 GitHub 仓库删除而下架，本地同步移除，历史存档 `doc/archives/`
   - **自研独立**：`dsh-desktop-shell`（原生代码）
 - **依赖引用**：bundle 插件均为独立仓库，直接 `github:<repo>#<ref>` 安装；仅 dsh-skills
   技能包子包用 `&path:/<subdir>` 语法。dsh-core 已于 2026-08-19 内联清理删除
@@ -194,7 +196,7 @@ NOTES.md 是完整档案库（~4664 行），**禁止整读**（按需读+索引
   改用自查 + 单测矩阵。
 - **改完自动提交 + 推送**：每次改动（文档/代码/配置）完成后立即 `git add + commit`，不攒变更；对话结束后执行 `git push` 推送到远端。
   并行会话 git checkout 会清未提交工作，改完即交避免丢失；推送到远端防止本地丢失。
-- **dsh-client-ui-aqua（已删除 2026-08-20）**：Aqua 玻璃质感主题（毛玻璃）client-only bundle；上游 WYH66666666/DSH-Transparent-UI-Plugin；本地修改=package.json name 去 scope 对齐 npm/patch。**本地在用版 `7d831d6` 已存档于伞目录 `doc/archives/DSH-Transparent-UI-Plugin-2026-08-20.bundle`**，需恢复时 clone 该 bundle 即可。
+- **dsh-ui-aqua（已恢复·按需可选 2026-08-21）**：Aqua 玻璃质感主题（毛玻璃）client-only bundle；上游 WYH66666666/DSH-Transparent-UI-Plugin；本地修改=package.json name 去 scope + peer 对齐本机 dsh + 补 `dsh.bundle.patch` 声明（上游源码缺、npm 产物有，GitHub 直装会当普通依赖）。**已从伞目录 `doc/archives/DSH-Transparent-UI-Plugin-2026-08-20.bundle` clone 恢复到伞目录 `DSH-Transparent-UI-Plugin/`（HEAD=`7d831d6`）并 link 进 web profile**；按需使用不入默认安装清单；上游自 fa0cb1f 后仅 README 更新无需跟。
 - **文件编码铁律**：仓库文件多为 UTF-8 + CRLF。**禁止用 PowerShell `Set-Content` 改含中文的文件**（按 GBK 解释 UTF-8 → U+FFFD mojibake，且已 push 会污染远端历史）。改 UTF-8 文件用 Node `readFileSync(...,'utf8')` + `writeFileSync(...,'utf8')`，或用 `str_replace_editor`（匹配须含 CRLF）。改坏后用 `git show` 找最后正常 commit 恢复再重放。
 
 ### 脚本与治理
