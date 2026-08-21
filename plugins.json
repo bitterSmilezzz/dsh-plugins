@@ -74,6 +74,16 @@
    "origin": "first-party",
    "scenario": "desktop",
    "note": "原生桌面壳（macOS Swift + Windows Tauri，独立）"
+  },
+  {
+   "id": "dsh-web-search-free",
+   "type": "bundle",
+   "source": "github",
+   "repo": "bitterSmilezzz/dsh-web-search-free",
+   "ref": "main",
+   "origin": "first-party",
+   "scenario": "all",
+   "note": "免费/低成本网页搜索路由（anysearch/exa/brave/deepseek官方兜底，开关在 settings.yaml 热生效）；独立仓库（2026-08-21 新建）"
   }
  ]
 }
