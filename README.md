@@ -22,6 +22,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 > 每个插件可单独安装，也可一键安装全部核心场景。
 > **2026-08-20**：`dsh-work`（agent-teams 收编版）因与官方 rc.8 内置 Agent Teams 运行时功能重复，已退役清仓；
 > `dsh-model-fix`（muse-spark-1.2 流式收尾修复）同日归档（完整历史存档于伞目录 `doc/archives/dsh-model-fix-2026-08-20.bundle`）。
+> **2026-08-21**：`dsh-market` 与 `dsh-usage-plugin` 卸载清仓（web profile 卸载 + GitHub 仓库删除，完整历史存档于伞目录 `doc/archives/` git bundle）；`dsh-visualize` 本地暂停使用、仓库保留待验证。
 
 ### 自研插件（独立仓库）
 
@@ -30,7 +31,6 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | dsh-memory | bundle + client | 记忆插件（自动日志/画像/摘要） | [dsh-memory](https://github.com/bitterSmilezzz/dsh-memory) |
 | dsh-visualize | bundle + client | 可视化 + 识图（visualize / vision_read_image） | [dsh-visualize](https://github.com/bitterSmilezzz/dsh-visualize) |
 | dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
-| dsh-usage-plugin | bundle + client | 用量/消耗统计（2026-08-19 脱钩内化改自研 + Pi 精简：概览/日历/余额面板 + usage_stats 工具） | [dsh-usage-plugin](https://github.com/bitterSmilezzz/dsh-usage-plugin) |
 
 ### 技能合并仓库
 
@@ -44,7 +44,6 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 
 | 插件 | 类型 | 一句话 | 仓库 |
 | --- | --- | --- | --- |
-| [dsh-market](https://github.com/bitterSmilezzz/dsh-market) | bundle + client | 可视化插件市场 | fork 自 dsh-market/dsh-market |
 | [dsh-desktop-shell](https://github.com/bitterSmilezzz/dsh-desktop-shell) | bundle | 原生桌面壳（macOS Swift + Windows Tauri） | 自研独立 |
 | [external](external/manifest.json) | 外部清单 | BrowserSkill + dsh-browser 等安装引导 | `external/manifest.json` |
 
@@ -54,7 +53,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 >   dsh-core（共享函数内联进消费方），把 bundle 拆为 6 个独立仓库
 >   （memory/visualize/ui-tweaks/work/usage-plugin/model-fix），技能包仍留 dsh-skills 合并仓。
 > - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
-> - 第三方 fork（market）**保持独立**（需跟上游 merge）；
+> - 第三方 fork（`dsh-market`）与 `dsh-usage-plugin` 于 **2026-08-21 卸载清仓**（完整历史存档于伞目录 `doc/archives/` git bundle；usage-plugin 曾于 2026-08-19 脱钩内化改自研）。
 >   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）；
 >   `dsh-better-sidebar`、`DSH-Transparent-UI-Plugin`（aqua）已于 **2026-08-20** 因 GitHub 仓库删除而下架（完整历史存档于伞目录 `doc/archives/` git bundle）。
 > - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 曾改名收编为 `dsh-work`，
@@ -83,7 +82,7 @@ cd deepseek-plugins
 bash scripts/install.sh
 ```
 
-`--all`（默认）安装**全部插件**：自研 4 bundle（独立仓库）+ 1 个第三方 fork +
+`--all`（默认）安装**全部插件**：自研 4 bundle（独立仓库）+ 3 个技能包（第三方 fork 已全部下架）。
 3 个技能包。安装来源以 [plugins.json](plugins.json) 为真相：
 bundle 全部从 GitHub 直装（`github:<repo>#<ref>`），技能包子包用 `&path:/<subdir>`；
 纯技能包 clone 到 `~/.dsh/plugin-cache/` 后复制 skills/ 与 preset/ 到对应目录。
@@ -125,7 +124,7 @@ dsh plugin --profile web add ~/workspace/dsh-ui-tweaks
 ```
 
 之后直接在 `~/workspace/dsh-ui-tweaks/` 改代码，浏览器硬刷新即生效；
-改完 `git add + commit + push` 同步到远端。第三方 fork（dsh-market 等）各自独立，
+第三方 fork 各自独立（dsh-market 已于 2026-08-21 下架），同样可 clone 到 `~/workspace/` 做 link 开发。
 同样可 clone 到 `~/workspace/` 做 link 开发。
 
 ## 配置
@@ -172,3 +171,4 @@ bash scripts/install.sh --only dsh-memory  # install a specific plugin
 
 MIT — 各子项目各有自己的 LICENSE（见各自独立仓库）。第三方组件来源与本地修改见
 [THIRD-PARTY.md](THIRD-PARTY.md)。
+
