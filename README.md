@@ -31,6 +31,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 | dsh-memory | bundle + client | 记忆插件（自动日志/画像/摘要） | [dsh-memory](https://github.com/bitterSmilezzz/dsh-memory) |
 | dsh-visualize | bundle + client | 可视化 + 识图（visualize / vision_read_image） | [dsh-visualize](https://github.com/bitterSmilezzz/dsh-visualize) |
 | dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
+| dsh-web-search-free | bundle（host-only） | **免费/低成本网页搜索路由**：anysearch（匿名免 key）/ exa（匿名 MCP）/ brave（免费额度）/ deepseek 官方（默认兜底、可关闭），失败自动回退，开关在 settings.yaml `web-search-free:` 段热生效（2026-08-21 新建） | [dsh-web-search-free](https://github.com/bitterSmilezzz/dsh-web-search-free) |
 
 ### 技能合并仓库
 
@@ -52,6 +53,7 @@ meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单�
 >   2026-08-19 再把 dsh-essentials（去路由预设）并入 dsh-ui-tweaks，并清理删除
 >   dsh-core（共享函数内联进消费方），把 bundle 拆为 6 个独立仓库
 >   （memory/visualize/ui-tweaks/work/usage-plugin/model-fix），技能包仍留 dsh-skills 合并仓。
+>   2026-08-21 新增第 7 个独立仓库 dsh-web-search-free（免费网页搜索路由）。
 > - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
 > - 第三方 fork（`dsh-market`）与 `dsh-usage-plugin` 于 **2026-08-21 卸载清仓**（完整历史存档于伞目录 `doc/archives/` git bundle；usage-plugin 曾于 2026-08-19 脱钩内化改自研）。
 >   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）；
