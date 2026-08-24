@@ -3,7 +3,8 @@
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件仓库的 agent 契约。
 本仓库是**所有新增插件的共同遵循仓库（伞仓库）**：承载全部插件契约，并承担新插件的校验与
 测试；插件清单见 [README.md](README.md)，经验与历史档案见 [NOTES.md](NOTES.md)。本文件
-**只承载契约**（`CLAUDE.md` 是其软链）。
+**只承载契约**（`CLAUDE.md` 是其软链）。**本契约版本无关**：不绑定任何 DSH 版本号，
+随官方契约演进另行评估，不因版本变更自动失效。
 
 > **⚑ 硬性约束（必须执行）**：每个对话 / agent 任务在**结束前**，必须把本次任务的经验落档到
 > [NOTES.md](NOTES.md)（踩过的坑、契约细节、决策理由、失败原因；无新增经验也须明确说明
