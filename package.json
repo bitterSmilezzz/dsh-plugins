@@ -2,12 +2,12 @@
   "name": "dsh-plugins",
   "version": "1.0.0",
   "private": true,
-  "description": "DSH 场景化插件 meta-repo — 汇总清单 + 一键/分场景安装脚本（插件均为独立仓库，见 plugins.json）",
+  "description": "DSH 插件伞仓库 — 承载插件契约 + 校验自有插件（scripts/validate-plugin.mjs + GitHub Actions）",
   "type": "module",
   "scripts": {
     "apply:settings": "node scripts/apply-settings.mjs",
-    "manifest": "node scripts/plugin-manifest.mjs list",
-    "check": "node scripts/check-consistency.mjs"
+    "validate": "node scripts/validate-plugin.mjs",
+    "validate:all": "node scripts/validate-all.mjs"
   },
   "engines": {
     "node": ">=20"

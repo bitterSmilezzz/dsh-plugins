@@ -2,189 +2,50 @@
 
 [EN](#deepseek-harness-plugins) · 简体中文
 
-一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）**插件伞仓库**：
-所有新增插件的共同遵循仓库，承担新插件的**校验与测试**（scripts/ 下一致性/bundle/回归设施），
-并承载全部插件契约（见 [AGENTS.md](AGENTS.md)）。插件已拆分到**独立仓库**，本仓库维护清单
-`plugins.json` + 安装脚本 + 文档，可单独安装，也可一键安装全部核心场景。
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件的**伞仓库**：
+所有新增插件的共同遵循仓库，承载插件契约并承担新插件的校验与测试。插件本体为独立仓库，
+各自安装；本仓库维护契约、校验脚本与经验档案。
 
-> Agent 与贡献者请先读 **[AGENTS.md](AGENTS.md)**（仓库约定与开发注意事项）与
-> **[NOTES.md](NOTES.md)**（踩坑 / 项目经验）。`CLAUDE.md` 是 `AGENTS.md` 的软链。
-> 第三方组件（fork / 收编后由本仓库维护）见 **[THIRD-PARTY.md](THIRD-PARTY.md)**。
-> 插件来源清单见 **[plugins.json](plugins.json)**（来源真相：每个插件指向独立仓库）。
+> - **契约（强制）**：见 [AGENTS.md](AGENTS.md)（`CLAUDE.md` 是其软链）——Pi 契约约束、
+>   DSH 官方规则契约、新插件校验与测试契约、DSH-Store 准入契约、dsh-std 协议契约。
+> - **经验档案**：见 [doc/experience/](doc/experience/)（按主题分类的踩坑/修复/治理记录）。
+> - **校验脚本**：`scripts/validate-plugin.mjs` —— 按契约对插件仓库逐条静态检查。
 
-## 目录
+## 校验
 
-> ✅ **2026-08-19 架构定型（v3）**：自研 bundle 插件原为 6 个独立仓库（memory/
-> visualize/ui-tweaks/work/usage-plugin/model-fix；essentials 已并入 ui-tweaks，dsh-core 因无多消费者已内联清理删除，
-> usage-plugin 同日脱钩内化改自研），
-> 技能包保持 dsh-skills 合并仓，
-> 第三方 fork 保持独立。
-> 本仓库为纯汇总（meta-repo），只维护 `plugins.json`（来源真相）+ 安装脚本 + 文档。
-> 每个插件可单独安装，也可一键安装全部核心场景。
-> **2026-08-20**：`dsh-work`（agent-teams 收编版）因与官方 rc.8 内置 Agent Teams 运行时功能重复，已退役清仓；
-> `dsh-model-fix`（muse-spark-1.2 流式收尾修复）同日归档（完整历史存档于伞目录 `doc/archives/dsh-model-fix-2026-08-20.bundle`）。
-> **2026-08-21**：`dsh-market` 与 `dsh-usage-plugin` 卸载清仓（web profile 卸载 + GitHub 仓库删除，完整历史存档于伞目录 `doc/archives/` git bundle）；`dsh-visualize` 本地暂停使用、仓库保留待验证。
-> **同日晚**：`DSH-Transparent-UI-Plugin`（aqua，包名 `dsh-ui-aqua`）从存档 bundle 恢复为**按需可选**——本地仓库恢复至伞目录并 link 进 web profile，GitHub fork 未恢复、**不入默认安装清单**（见 [THIRD-PARTY.md](THIRD-PARTY.md)）。
-
-### 自研插件（独立仓库）
-
-| 插件 | 类型 | 说明 | 仓库 |
-| --- | --- | --- | --- |
-| dsh-memory | bundle + client | 记忆插件（自动日志/画像/摘要） | [dsh-memory](https://github.com/bitterSmilezzz/dsh-memory) |
-| dsh-visualize | bundle + client | 可视化 + 识图（visualize / vision_read_image） | [dsh-visualize](https://github.com/bitterSmilezzz/dsh-visualize) |
-| dsh-ui-tweaks | bundle + client | **基础输入 + UI 增强 + 桌面通知**：模型选择、粘贴/拖拽/@引用、无损省 token、插件列表、自动隐藏、重试、沉浸、快捷键、系统通知（2026-08-19 并入原 essentials，去路由预设） | [dsh-ui-tweaks](https://github.com/bitterSmilezzz/dsh-ui-tweaks) |
-| dsh-web-search-free | bundle（host-only） | **免费/低成本网页搜索路由**：anysearch（匿名免 key）/ exa（匿名 MCP）/ brave（免费额度）/ deepseek 官方（默认兜底、可关闭），失败自动回退，开关在 settings.yaml `web-search-free:` 段热生效（2026-08-21 新建） | [dsh-web-search-free](https://github.com/bitterSmilezzz/dsh-web-search-free) |
-
-### 技能合并仓库
-
-| 仓库 | 包含子包 | 类型 | 说明 |
-| --- | --- | --- | --- |
-| [dsh-skills](https://github.com/bitterSmilezzz/dsh-skills) | `dsh-dev` | 纯技能包 | 开发场景（mattpocock/skills + archify） |
-| | `dsh-writing` | 纯技能包 | 写作场景（39 个文章/学术写作技能） |
-| | `dsh-design` | 纯技能包 | 设计场景（gpt-image + frontend-design） |
-
-### 独立仓库（第三方 fork / 原生）
-
-| 插件 | 类型 | 一句话 | 仓库 |
-| --- | --- | --- | --- |
-| [dsh-desktop-shell](https://github.com/bitterSmilezzz/dsh-desktop-shell) | bundle | 原生桌面壳（macOS Swift + Windows Tauri） | 自研独立 |
-| DSH-Transparent-UI-Plugin（`dsh-ui-aqua`） | bundle（client-only） | Aqua 玻璃质感主题（毛玻璃/流体/壁纸背景）；**按需可选·不入默认清单**——本地仓库自存档 bundle 恢复（GitHub fork 已删），安装命令见 [THIRD-PARTY.md](THIRD-PARTY.md) | 上游 [WYH66666666/DSH-Transparent-UI-Plugin](https://github.com/WYH66666666/DSH-Transparent-UI-Plugin) |
-| [external](external/manifest.json) | 外部清单 | BrowserSkill + dsh-browser 等安装引导 | `external/manifest.json` |
-
-> **架构演进（2026-08-19）**：
-> - 自研插件先合并为 2 个 monorepo（dsh-plugins/dsh-skills），同日又拆回独立仓库；
->   2026-08-19 再把 dsh-essentials（去路由预设）并入 dsh-ui-tweaks，并清理删除
->   dsh-core（共享函数内联进消费方），把 bundle 拆为 6 个独立仓库
->   （memory/visualize/ui-tweaks/work/usage-plugin/model-fix），技能包仍留 dsh-skills 合并仓。
->   2026-08-21 新增第 7 个独立仓库 dsh-web-search-free（免费网页搜索路由）。
-> - 原汇总仓库 `deepseek-plugins` 已删除，meta-repo 角色由本仓库（dsh-plugins）承担。
-> - 第三方 fork（`dsh-market`）与 `dsh-usage-plugin` 于 **2026-08-21 卸载清仓**（完整历史存档于伞目录 `doc/archives/` git bundle；usage-plugin 曾于 2026-08-19 脱钩内化改自研）。
->   `dsh-usage-plugin` 已于 2026-08-19 **脱钩内化改自研**（不再跟上游 merge）；
->   `dsh-better-sidebar`、`DSH-Transparent-UI-Plugin`（aqua）已于 **2026-08-20** 因 GitHub 仓库删除而下架（完整历史存档于伞目录 `doc/archives/` git bundle）；aqua 已于 **2026-08-21** 从存档恢复为按需可选（本地仓库，不入默认安装清单）。
-> - `dsh-mode-boost` 已删除（去芜存菁）。`dsh-agent-teams` 曾改名收编为 `dsh-work`，
->   因与官方 rc.8 内置 Agent Teams 运行时功能重复已于 2026-08-20 退役清仓。
-> - `dsh-model-fix`（muse-spark-1.2 流式收尾修复）已于 **2026-08-20 归档**（完整历史存档于伞目录 `doc/archives/dsh-model-fix-2026-08-20.bundle`）。
-> - `dsh-notify`（系统通知）已并入 `dsh-ui-tweaks`，代码级重构为单一 bundle。
-
-## 社区推荐（不收编，各自维护）
-
-以下插件非本仓库维护，但符合 Pi 理念（零 token 开销 / 副作用可逆 / 依赖干净），按需安装：
-
-| 插件 | 一句话 | 安装 |
-| --- | --- | --- |
-| [dsh-plugin-wallpaper-engine-mac](https://github.com/ruijiaang-lab/dsh-wallpaper-engine) | WaifuX / Wallpaper Engine 壁纸做 DSH 背景 + iOS 液态玻璃（**零 token 注入**） | `dsh plugin --profile web add dsh-plugin-wallpaper-engine-mac` |
-
-> ⚠️ macOS 版（ruijiaang-lab fork）扫描 WaifuX 下载目录 + `~/Documents/dsh/we-content/`，装好 WaifuX 即可零配置使用。Windows 原版见 [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)。
-> ⚠️ CSS 与 DSH 壳 / dsh-better-sidebar 内部类名耦合，对方升级后玻璃效果可能静默失效。
-
-## 安装
-
-### 一键安装全部（推荐）
+新插件登记发布前，须在本仓库通过校验（契约见 AGENTS.md「新插件校验与测试契约」）：
 
 ```sh
-git clone https://github.com/bitterSmilezzz/deepseek-plugins.git
-cd deepseek-plugins
-bash scripts/install.sh
+node scripts/validate-plugin.mjs ../dsh-xxx     # 校验某个插件仓库（默认输出报告）
+node scripts/validate-plugin.mjs ../dsh-xxx --json   # JSON 输出（CI 用）
 ```
 
-`--all`（默认）安装**全部插件**：自研 4 bundle（独立仓库）+ 3 个技能包（第三方 fork 已全部下架）。
-3 个技能包。安装来源以 [plugins.json](plugins.json) 为真相：
-bundle 全部从 GitHub 直装（`github:<repo>#<ref>`），技能包子包用 `&path:/<subdir>`；
-纯技能包 clone 到 `~/.dsh/plugin-cache/` 后复制 skills/ 与 preset/ 到对应目录。
-装完**硬刷新浏览器**（Cmd/Ctrl+Shift+R）。
+GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 清单时自动校验
+`scripts/manifest.json` 中的全部插件，失败自动开 Issue。新增插件：在 `scripts/manifest.json`
+加一行即自动纳入。
 
-### 按需安装
+## 脚本
 
-```sh
-bash scripts/install.sh --only dsh-ui-tweaks,dsh-memory  # 只装指定 bundle
-bash scripts/install.sh --only dsh-dev                     # 只装技能包（复制到 ~/.agents/skills）
-bash scripts/install.sh --only dsh-ui-tweaks               # 基础输入 + UI 增强（自动带省 token 配置）
-bash scripts/install.sh --external                         # 只装外部浏览器组件
-bash scripts/install.sh -p headless --all                  # 指定 profile
-```
+| 脚本 | 用途 |
+| --- | --- |
+| `validate-plugin.mjs` | 按契约静态校验插件仓库（核心） |
+| `apply-settings.mjs` | 安全合并设置模板到 `~/.dsh/settings.yaml` |
+| `install-external.mjs` | 外部组件安装引导（读 `external/manifest.json`） |
+| `measure-load.mjs` / `measure-memory.mjs` / `web-regression.mjs` | 浏览器加载/内存/回归测量 |
 
-`dsh` 不在 PATH 时加 `--dsh`：`bash scripts/install.sh --dsh "pnpm --dir /path/to/deepseek-harness dsh"`。
+## 本地开发
 
-**Aqua 玻璃主题（按需，不在默认清单）**：本地仓库已从伞目录
-`doc/archives/DSH-Transparent-UI-Plugin-2026-08-20.bundle` 恢复到伞目录 `DSH-Transparent-UI-Plugin/`
-（GitHub fork 已删，无法 GitHub 直装；上游源码缺 bundle 声明也不可直装），需要时手动：
-
-```sh
-git clone doc/archives/DSH-Transparent-UI-Plugin-2026-08-20.bundle DSH-Transparent-UI-Plugin  # 尚未恢复时
-dsh plugin --profile web add ~/workspace/deepseek-harness/DSH-Transparent-UI-Plugin
-```
-
-### 低层批量安装
-
-```sh
-node scripts/install-plugins.mjs -p web                        # 安装全部真 bundle
-node scripts/install-plugins.mjs -p web --only dsh-ui-tweaks,dsh-memory
-```
-
-纯技能包（dsh-dev / dsh-writing / dsh-design）不走 `dsh plugin add`，由
-`install.sh` clone 后复制到 `~/.agents/skills`（源码缓存于 `~/.dsh/plugin-cache/`）。
-
-## 本地开发模式（每个插件都要改时）
-
-每个自研插件是**独立仓库**，**clone 一份到本地，profile 用 link 指向本地**，
-改完刷新 GUI 即生效，稳定后 push：
-
-```sh
-git clone https://github.com/bitterSmilezzz/dsh-ui-tweaks.git ~/workspace/dsh-ui-tweaks
-cd ~/workspace/dsh-ui-tweaks && pnpm install    # 装依赖（官方 @deepseek-ai/* 包）
-
-# 从本地 link 装（替换 github 源）
-dsh plugin --profile web add ~/workspace/dsh-ui-tweaks
-```
-
-之后直接在 `~/workspace/dsh-ui-tweaks/` 改代码，浏览器硬刷新即生效；
-第三方 fork 各自独立（dsh-market 已于 2026-08-21 下架），同样可 clone 到 `~/workspace/` 做 link 开发。
-同样可 clone 到 `~/workspace/` 做 link 开发。
-
-## 配置
-
-- 脱敏 settings 模板：`config/settings.example.yaml`（无任何 key/token）。
-- 外部组件清单：`external/manifest.json`。
-
-## 如何新增一个插件
-
-1. 自研 bundle：创建**独立仓库**（如 `dsh-xxx`）；技能：加入 `dsh-skills` 仓库（新增子包目录）。
-2. 登记 `plugins.json`：`source: github` + `repo` + `ref` + `path`（技能子包）+ `type`（bundle/skills）。
-3. 根 README 目录表补一行，并按 AGENTS.md 要求落档 NOTES。
+插件仓库 clone 到伞目录，profile 用 link 指向本地，改完硬刷新即生效，稳定后 push
+（详见各插件仓库 README）。
 
 ## English Index
 
-A DSH plugin **meta-repo**: self-developed bundle plugins live in standalone
-repos, skills stay in the `dsh-skills` monorepo, third-party forks stay
-independent (see [plugins.json](plugins.json)); this repo holds the manifest,
-install scripts, and docs. All plugins install from GitHub.
-
-- `dsh-memory`, `dsh-visualize`, `dsh-usage-plugin` — standalone repos;
-  `dsh-ui-tweaks` — standalone repo (base input + UI enhancements + desktop notifications,
-  merged from former essentials; `dsh-core` was inlined and removed 2026-08-19;
-  `dsh-usage-plugin` decoupled from upstream and became first-party 2026-08-19;
-  `dsh-work` retired 2026-08-20 — overlaps the official rc.8 Agent Teams runtime;
-  `dsh-model-fix` archived 2026-08-20 — stream-termination fix for models whose
-  provider never sends `finish_reason`/`[DONE]` (e.g. opencode's muse-spark-1.2), history
-  preserved as a git bundle under the umbrella `doc/archives/dsh-model-fix-2026-08-20.bundle`).
-- `dsh-skills` — monorepo: `dsh-dev`, `dsh-writing` (39 writing skills), `dsh-design`.
-- `dsh-market` — third-party fork; removed 2026-08-21 together with `dsh-better-sidebar`
-  (deleted on GitHub 2026-08-20, delisted here, history preserved as git bundles under the
-  umbrella `doc/archives/`). `DSH-Transparent-UI-Plugin`/aqua (`dsh-ui-aqua`) was restored
-  from its archive bundle on 2026-08-21 as an **optional, install-on-demand** local repo —
-  no GitHub fork, not part of the default install set (see [THIRD-PARTY.md](THIRD-PARTY.md)).
-- `dsh-desktop-shell` — native desktop shell (macOS Swift + Windows Tauri).
-- `external/` — browser/TUI install manifest.
-
-Install all core scenarios:
-
-```sh
-bash scripts/install.sh                    # install everything
-bash scripts/install.sh --only dsh-memory  # install a specific plugin
-```
+A DSH plugin **umbrella repo**: holds the plugin contracts (see
+[AGENTS.md](AGENTS.md)) and validates your own plugins against them
+(`scripts/validate-plugin.mjs`, automated by GitHub Actions). Plugins live in
+standalone repos and install independently; experience notes are categorized
+under [doc/experience/](doc/experience/).
 
 ## License
 
-MIT — 各子项目各有自己的 LICENSE（见各自独立仓库）。第三方组件来源与本地修改见
-[THIRD-PARTY.md](THIRD-PARTY.md)。
-
+MIT — 各子项目各有自己的 LICENSE（见各自独立仓库）。

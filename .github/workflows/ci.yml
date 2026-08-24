@@ -6,37 +6,20 @@ on:
   pull_request:
 
 jobs:
-  check:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
-      # meta-repo：插件均为独立仓库，本仓库只维护 plugins.json + 安装脚本。
-      # 可测面 = 清单一致性 + 各安装脚本的 --dry-run（不触网）。
-      - name: Install dependencies (frozen lockfile)
-        run: pnpm install --frozen-lockfile
-
-      - name: Manifest consistency (plugins.json)
-        run: node scripts/check-consistency.mjs
-
-      - name: Manifest query smoke
-        run: node scripts/plugin-manifest.mjs list
-
-      - name: Installer dry-run (all)
-        run: bash scripts/install.sh --dry-run
-
-      - name: install-plugins dry-run
-        run: node scripts/install-plugins.mjs --dry-run
+      - name: 校验脚本自检
+        run: |
+          node --check scripts/validate-plugin.mjs
+          node scripts/validate-plugin.mjs . --json >/dev/null && echo "validate-plugin 可运行"
 
       - name: Settings apply dry-run
         run: node scripts/apply-settings.mjs --dry-run --settings /tmp/nonexistent-settings.yaml

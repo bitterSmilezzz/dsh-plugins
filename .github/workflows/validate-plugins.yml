@@ -1,0 +1,95 @@
+# 校验自有插件仓库：按伞仓库契约（AGENTS.md）逐条静态检查。
+# 触发：cron 每 8 小时 + push 清单/校验脚本 + 手动 workflow_dispatch。
+# 失败自动开/更新 GitHub Issue（含每个插件的 FAIL 明细）。
+name: validate-plugins
+
+on:
+  schedule:
+    - cron: '0 */8 * * *'   # 每 8 小时
+  push:
+    paths:
+      - 'scripts/manifest.json'
+      - 'scripts/validate-plugin.mjs'
+      - '.github/workflows/validate-plugins.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 校验清单内全部插件
+        id: validate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          node - <<'EOF'
+          const { execFileSync } = require('node:child_process')
+          const fs = require('node:fs')
+          const manifest = JSON.parse(fs.readFileSync('scripts/manifest.json', 'utf8'))
+          const lines = []
+          let anyFail = false
+          for (const p of manifest.plugins) {
+            const dir = `.checkout/${p.id}`
+            try {
+              execFileSync('git', ['clone', '--depth', '1', `https://github.com/${p.repo}.git`, dir], { stdio: 'ignore' })
+              const out = execFileSync('node', ['scripts/validate-plugin.mjs', dir, '--json'], { encoding: 'utf8' })
+              const r = JSON.parse(out)
+              const fails = r.results.filter(x => x.status === 'FAIL')
+              const warns = r.results.filter(x => x.status === 'WARN')
+              lines.push(`### ${p.id} — ${fails.length} 失败 / ${warns.length} 提示 / ${r.pass} 通过`)
+              for (const f of fails) lines.push(`- [FAIL] ${f.name}${f.detail ? ` — ${f.detail}` : ''}`)
+              for (const w of warns) lines.push(`- [WARN] ${w.name}${w.detail ? ` — ${w.detail}` : ''}`)
+              if (fails.length) anyFail = true
+            } catch (e) {
+              lines.push(`### ${p.id} — 校验执行失败: ${String(e.message || e).slice(0, 300)}`)
+              anyFail = true
+            }
+          }
+          fs.writeFileSync('report.md', lines.join('\n'))
+          console.log(lines.join('\n'))
+          process.exit(anyFail ? 1 : 0)
+          EOF
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: 失败时开/更新 Issue
+        if: steps.validate.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const report = fs.readFileSync('report.md', 'utf8')
+            const title = '插件契约校验未通过'
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: ['validate-plugin']
+            })
+            const body = `自动校验（${new Date().toISOString()}）发现插件未通过伞仓库契约：\n\n${report}\n\n请按 [AGENTS.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/AGENTS.md) 契约逐条整改。`
+            if (issues.length) {
+              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issues[0].number, body })
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['validate-plugin'] })
+            }
+
+      - name: 通过时关闭遗留 Issue
+        if: steps.validate.outputs.exit_code == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: ['validate-plugin']
+            })
+            for (const i of issues) {
+              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: i.number, state: 'closed' })
+            }
