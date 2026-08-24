@@ -12,13 +12,16 @@
  *   [namespace] 包名不以 @deepseek-ai/ 开头
  *   [scripts]   preinstall/install/postinstall/prepare 显式列出（无则通过，报告）
  *   [permission] README/manifest 含权限等级披露（low/medium/high/unknown）
- *   [readme]    README 存在且包含安装与权限说明
+ *   [readme]    README 存在且包含安装与权限说明；写明外部依赖与已知风险
  *   [fixed]     git 仓库存在，HEAD 为 40 位 commit（固定源）
+ *   [tag]       version 与最新 git tag 一致（manifest 一致）
  *   [inject]    host 入口声明 inject（若存在 src/index.ts 或 lib/index.js）
+ *   [tools]     工具注册数 ≤3（Pi 契约：Context 是最贵资源）；>5 需评审，>10 必须拆分
+ *   [dshstd]    依赖 @dsh-std/* 时须有 docs/proposals/ 提案目录
  *
  * 退出码：0=全部通过；1=存在 FAIL；2=参数/路径错误。
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
 
@@ -129,6 +132,72 @@ if (hostEntry) {
   injectInfo = hasInject ? `${hostEntry} 声明 inject` : `${hostEntry} 未声明 inject`
 }
 check('inject', 'host 入口声明 inject 硬依赖', injectOk, injectInfo)
+
+// ---------- tool 数量（Pi 契约：Context 是最贵资源——工具数默认 ≤3，>5 需评审，>10 必须拆分） ----------
+const toolSources = ['src', 'lib'].filter((d) => existsSync(resolve(root, d)))
+let toolCount = 0
+for (const dir of toolSources) {
+  const walk = (d) => {
+    for (const f of readdirSync(resolve(root, d))) {
+      const full = resolve(root, d, f)
+      if (existsSync(full) && statSync(full).isDirectory()) walk(`${d}/${f}`)
+      else if (/\.(js|ts|tsx|mjs)$/.test(f)) {
+        const text = readFileSync(full, 'utf8')
+        toolCount += (text.match(/ctx\.tools\.register\(|tools\.register\(|\.tool\(/g) || []).length
+      }
+    }
+  }
+  walk(dir)
+}
+const toolDetail = `${toolCount} 个工具注册`
+if (toolCount <= 3) {
+  check('tools.count', '工具数 ≤ 3（Pi 契约：Context 是最贵资源）', true, toolDetail)
+} else if (toolCount <= 10) {
+  warn('tools.count', '工具数 4–10 需专项评审（Pi 契约）', toolDetail)
+} else {
+  check('tools.count', '工具数 > 10 必须拆分（Pi 契约）', false, toolDetail)
+}
+
+// ---------- version ↔ git tag（DSH-Store 准入契约：manifest 一致） ----------
+let tagInfo = '无 git tag'
+let versionMatches = true
+try {
+  if (existsSync(resolve(root, '.git'))) {
+    const tags = execFileSync('git', ['-C', root, 'tag'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
+    if (tags.length > 0) {
+      const latest = tags[tags.length - 1].replace(/^v/, '')
+      tagInfo = `最新 tag v${latest}`
+      versionMatches = latest === (pkg?.version ?? '')
+    }
+  }
+} catch { /* 非 git 仓库 */ }
+if (pkg?.version && !versionMatches) {
+  warn('manifest.tag', 'version 与最新 git tag 一致（DSH-Store：manifest 一致）', `${tagInfo} ≠ manifest ${pkg.version}，发布前打 tag 对齐`)
+} else {
+  check('manifest.tag', 'version 与最新 git tag 一致（DSH-Store：manifest 一致）', true, tagInfo)
+}
+
+// ---------- README 完整性（DSH-Store：README 写明外部依赖/权限/已知风险） ----------
+const readmeDeps = /外部依赖|依赖|dependencies|requires?/i.test(readme)
+const readmeRisk = /已知风险|风险|limitations?|已知限制|risks?/i.test(readme)
+if (readmeDeps && readmeRisk) {
+  check('readme.complete', 'README 写明外部依赖与已知风险', true)
+} else {
+  warn('readme.complete', 'README 写明外部依赖与已知风险',
+    `${readmeDeps ? '' : '缺外部依赖说明 '}${readmeRisk ? '' : '缺已知风险说明'}`.trim())
+}
+
+// ---------- dsh-std 协议契约：依赖 @dsh-std/* 时须有 docs/proposals/ ----------
+const deps = { ...(pkg?.dependencies ?? {}), ...(pkg?.devDependencies ?? {}), ...(pkg?.peerDependencies ?? {}) }
+const stdDeps = Object.keys(deps).filter((k) => k.startsWith('@dsh-std/'))
+if (stdDeps.length > 0) {
+  const hasProposals = existsSync(resolve(root, 'docs/proposals'))
+  check('dshstd.proposals', '依赖 @dsh-std/* 时须有 docs/proposals/ 提案目录（dsh-std 契约）',
+    hasProposals, `${stdDeps.join(', ')}${hasProposals ? '' : ' — 缺少 docs/proposals/'}`)
+} else {
+  check('dshstd.proposals', '依赖 @dsh-std/* 时须有 docs/proposals/ 提案目录（dsh-std 契约）',
+    true, '未依赖 @dsh-std/*，跳过')
+}
 
 // ---------- 汇总 ----------
 const fails = results.filter((r) => r.status === 'FAIL')
