@@ -1,8 +1,9 @@
 # AGENTS.md
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件仓库的 agent 契约。
-本仓库是**插件 meta-repo（纯汇总仓库）**；插件清单见 [README.md](README.md)，经验与历史档案见
-[NOTES.md](NOTES.md)。本文件**只承载契约**（`CLAUDE.md` 是其软链）。
+本仓库是**所有新增插件的共同遵循仓库（伞仓库）**：承载全部插件契约，并承担新插件的校验与
+测试；插件清单见 [README.md](README.md)，经验与历史档案见 [NOTES.md](NOTES.md)。本文件
+**只承载契约**（`CLAUDE.md` 是其软链）。
 
 > **⚑ 硬性约束（必须执行）**：每个对话 / agent 任务在**结束前**，必须把本次任务的经验落档到
 > [NOTES.md](NOTES.md)（踩过的坑、契约细节、决策理由、失败原因；无新增经验也须明确说明
@@ -41,6 +42,12 @@
   - 数据只读叶子字段，不序列化活对象
 - **⚑ 不破坏官方行为**：插件 patch 只追加/覆盖配置，不绕过官方安全门禁（api-proxy 准入、
   sandbox policy、capability ACL）。不 hack 官方 client.js 内部逻辑。
+
+## 新插件校验与测试契约（⚑ 强制，伞仓库职责）
+
+> 本仓库是所有新增插件的共同遵循仓库，**承担新插件的校验与测试**：新插件登记发布前，须在
+> 本仓库通过既有校验与测试设施（scripts/ 下 check-consistency / check-bundle-size /
+> web-regression 等），并对照本文全部契约逐条自检；未通过不得发布。
 
 ## DSH-Store 准入契约（⚑ 强制，第三方商城上架门禁）
 

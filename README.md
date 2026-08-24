@@ -2,9 +2,10 @@
 
 [EN](#deepseek-harness-plugins) · 简体中文
 
-一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）**场景化插件汇总仓库**：
-按「基础 / 开发 / 写作 / 设计 / 工作」组织场景，每个插件已拆分到**独立仓库**（本仓库作为
-meta-repo：只维护清单 `plugins.json` + 安装脚本 + 文档），可单独安装，也可一键安装全部核心场景。
+一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）**插件伞仓库**：
+所有新增插件的共同遵循仓库，承担新插件的**校验与测试**（scripts/ 下一致性/bundle/回归设施），
+并承载全部插件契约（见 [AGENTS.md](AGENTS.md)）。插件已拆分到**独立仓库**，本仓库维护清单
+`plugins.json` + 安装脚本 + 文档，可单独安装，也可一键安装全部核心场景。
 
 > Agent 与贡献者请先读 **[AGENTS.md](AGENTS.md)**（仓库约定与开发注意事项）与
 > **[NOTES.md](NOTES.md)**（踩坑 / 项目经验）。`CLAUDE.md` 是 `AGENTS.md` 的软链。
