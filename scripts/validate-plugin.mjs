@@ -99,8 +99,12 @@ check('entry.protected', '未禁用/遮蔽官方组件', protectedOk,
 const readme = readText('README.md')
 check('readme.exists', 'README 存在', readme.length > 200)
 check('readme.install', 'README 含安装/启用说明', /安装|install/i.test(readme))
-warn('readme.permission', 'README 含权限等级披露（low/medium/high/unknown）',
-  /low|medium|high|unknown|权限|permissions?|access/i.test(readme) ? '' : 'README 未披露权限等级，建议补充')
+const disclosed = /low|medium|high|unknown|权限|permissions?|access/i.test(readme)
+if (disclosed) {
+  check('readme.permission', 'README 含权限等级披露（low/medium/high/unknown）', true)
+} else {
+  warn('readme.permission', 'README 含权限等级披露（low/medium/high/unknown）', 'README 未披露权限等级，建议补充')
+}
 
 // ---------- fixed source（DSH-Store 准入契约：固定源发布） ----------
 let fixedOk = false
