@@ -158,6 +158,36 @@ plugins.json（来源真相清单） · scripts/（install.sh 一键装 + 一致
 - **⚑ 不破坏官方行为**：插件 patch 只追加/覆盖配置，不绕过官方安全门禁（api-proxy 准入、
   sandbox policy、capability ACL）。不 hack 官方 client.js 内部逻辑。
 
+### DSH-Store 准入契约（⚑ 强制，第三方商城上架门禁）
+
+> 契约**单一来源在本节**：所有伞下插件仓库的 AGENTS.md 只放指向本文件的指针，不复制内容。
+> 本伞下插件若面向第三方商城 [DSH-Store](https://github.com/AI-Scarlett/dsh-safe-plugin-manager)
+> （AI-Scarlett/dsh-safe-plugin-manager：第三方 DSH 插件商城 + 安全生命周期管理器）上架，
+> 须满足其[目录准入规则](https://github.com/AI-Scarlett/dsh-safe-plugin-manager/blob/main/registry/README.md)；
+> 违反任一条即被自动拒绝（blocked），并触发 GitHub 作者整改通知。开发与发布前逐条自检。
+
+- **⚑ 固定源发布**：只以公开 GitHub 仓库分发，`commit` 固定 40 位不可变 commit；不发布浮动
+  分支引用（`#main` 等）、npm-only、本地路径或任意下载 URL 作为分发入口。
+- **⚑ manifest 一致**：`package.json` 声明 `dsh.bundle.patch`，`version` 与固定 commit 的
+  manifest 一致；monorepo 以 `installPath` 唯一定位插件目录。
+- **⚑ 入口唯一，不动官方组件**：`entryIds` 与 Bundle Patch 插入的 DSH ID 一致且全局唯一；
+  **禁止禁用、替换、遮蔽或重复安装任何 `@deepseek-ai/*` 官方组件**（含 `disabled: true`
+  禁用官方 entry——这是 DSH-Store 拒绝的高频原因）。增强官方 UI 一律用 slot 注入叠加，
+  不靠禁用官方 entry。
+- **⚑ 命名空间合规**：不以 `@deepseek-ai/*` 命名空间发布自有包。
+- **⚑ 生命周期脚本透明**：`preinstall/install/postinstall/prepare` 等脚本显式列出；
+  没有则明示「无」。
+- **⚑ 权限保守披露**：manifest 与 README 声明文件/网络/命令/凭据访问及权限等级——
+  `low`（完全无访问）/ `medium`（有限范围只读、插件私有状态、指定服务或受限命令）/
+  `high`（Profile/会话/敏感持久状态、任意网络、任意 Shell、凭据、插件生命周期管理）；
+  无证据写 `unknown`，禁止写成 `none`。
+- **⚑ README 完整**：写明用途、安装/启用方式、外部依赖、权限与已知风险；名称用
+  「中文名（English Name）」，description 含中文用途，提供 searchTerms 中文搜索词。
+- **⚑ 可验证**：`npm run validate:registry` 通过；高权限、原生构建或外部服务依赖附
+  一次性 Profile 的安装与功能验收证据。
+- **被拒即整改**：收到 blocked / 候选拒绝（`statusReason`）后，定位违规点修复并重新提交；
+  不得绕过门禁直接分发（手动安装入口只作临时通道，不受商城事务保护）。
+
 ## 踩坑 / 项目经验（NOTES.md）
 
 **⚑ 强制落档**（呼应顶部）：每个任务结束前写入 NOTES.md，格式见顶部硬性约束。
