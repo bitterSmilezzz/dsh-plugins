@@ -16,10 +16,49 @@ jobs:
         with:
           node-version: 22
 
-      - name: 校验脚本自检
+      - name: 校验脚本自检（最小合规样例）
         run: |
           node --check scripts/validate-plugin.mjs
-          node scripts/validate-plugin.mjs . --json >/dev/null && echo "validate-plugin 可运行"
+          # 构造最小合规插件样例，验证 validate 全 PASS（不拿伞仓库自身当插件校验）
+          mkdir -p /tmp/sample-plugin && cd /tmp/sample-plugin
+          git init -q
+          git config user.email ci@test && git config user.name CI
+          git commit --allow-empty -q -m init
+          cat > package.json <<'PKG'
+          {"name":"sample-plugin","version":"0.1.0","license":"MIT","dsh":{"bundle":{"patch":"./cordis.patch.yml"}}}
+          PKG
+          cat > cordis.patch.yml <<'PATCH'
+          - insert:
+              - id: sample-plugin
+          PATCH
+          cat > README.md <<'RDM'
+          # sample-plugin
+
+          ## 安装
+
+          install via dsh plugin add.
+
+          ## 权限
+
+          low — no file, network, command, or credential access.
+
+          ## 功能
+
+          A minimal sample plugin used to verify the contract validator itself.
+
+          ## 依赖
+
+          none.
+
+          ## 已知风险
+
+          none.
+
+          ## License
+
+          MIT.
+          RDM
+          node "$GITHUB_WORKSPACE/scripts/validate-plugin.mjs" /tmp/sample-plugin --json
 
       - name: Settings apply dry-run
         run: node scripts/apply-settings.mjs --dry-run --settings /tmp/nonexistent-settings.yaml

@@ -43,6 +43,12 @@ jobs:
             const dir = `.checkout/${p.id}`
             try {
               execFileSync('git', ['clone', '--depth', '1', `https://github.com/${p.repo}.git`, dir], { stdio: 'ignore' })
+            } catch (e) {
+              lines.push(`### ${p.id} — clone 失败: ${String(e.message || e).slice(0, 200)}`)
+              anyFail = true
+              continue
+            }
+            try {
               const out = execFileSync('node', ['scripts/validate-plugin.mjs', dir, '--json'], { encoding: 'utf8' })
               const r = JSON.parse(out)
               const fails = r.results.filter(x => x.status === 'FAIL')
@@ -52,7 +58,18 @@ jobs:
               for (const w of warns) lines.push(`- [WARN] ${w.name}${w.detail ? ` — ${w.detail}` : ''}`)
               if (fails.length) anyFail = true
             } catch (e) {
-              lines.push(`### ${p.id} — 校验执行失败: ${String(e.message || e).slice(0, 300)}`)
+              // exit 1 = 存在 FAIL，stdout 里是 JSON 报告
+              const out = e.stdout ? e.stdout.toString() : ''
+              try {
+                const r = JSON.parse(out)
+                const fails = r.results.filter(x => x.status === 'FAIL')
+                const warns = r.results.filter(x => x.status === 'WARN')
+                lines.push(`### ${p.id} — ${fails.length} 失败 / ${warns.length} 提示 / ${r.pass} 通过`)
+                for (const f of fails) lines.push(`- [FAIL] ${f.name}${f.detail ? ` — ${f.detail}` : ''}`)
+                for (const w of warns) lines.push(`- [WARN] ${w.name}${w.detail ? ` — ${w.detail}` : ''}`)
+              } catch {
+                lines.push(`### ${p.id} — 校验执行失败: ${String(e.message || e).slice(0, 200)}`)
+              }
               anyFail = true
             }
           }
