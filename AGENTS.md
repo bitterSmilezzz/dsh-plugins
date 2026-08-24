@@ -1,74 +1,15 @@
 # AGENTS.md
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件仓库的 agent 根约定。
-本仓库是**插件 meta-repo（纯汇总仓库）**：只维护 `plugins.json`（来源真相）、安装脚本与文档；
-**插件清单见 [README.md](README.md)**，本文件只做**协调与契约**（`CLAUDE.md` 是其软链）。
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件仓库的 agent 契约。
+本仓库是**插件 meta-repo（纯汇总仓库）**；插件清单见 [README.md](README.md)，经验与历史档案见
+[NOTES.md](NOTES.md)。本文件**只承载契约**（`CLAUDE.md` 是其软链）。
 
 > **⚑ 硬性约束（必须执行）**：每个对话 / agent 任务在**结束前**，必须把本次任务的经验落档到
 > [NOTES.md](NOTES.md)（踩过的坑、契约细节、决策理由、失败原因；无新增经验也须明确说明
 > 「本次无新增经验」）。格式：短标题 + **问题 → 原因 → 解法 → 可复现?**，追加在最上方（新→旧）。
 > 未落档视为任务未完成。
 
-## 目录结构
-
-```
-AGENTS.md（本文件：协调+契约） · CLAUDE.md（→AGENTS.md） · README.md（访客清单）
-NOTES.md（经验档案） · plugins.json（来源真相清单） · scripts/（安装与一致性守护脚本）
-```
-
-新增插件：自研 bundle 创建**独立仓库**，技能加入 `dsh-skills` 子包 →
-登记 `plugins.json`（source=github + repo + ref + path + type）→ README 补一行清单 → NOTES 落档。
-
-## 本地仓库组织约定
-
-所有 GitHub 上的 dsh 插件仓库统一放在一个**伞目录**下（跨平台约定；Windows 当前为
-`D:\workspace\deepseek-harness`，macOS 参照同一约定自行设定伞目录路径）。伞目录内含各插件
-独立 git 仓库（如 `dsh-ui-tweaks`、`dsh-desktop-shell`）。
-
-**meta-repo 保持干净**：本仓库只存 `plugins.json` + 脚本 + 文档；编译产物、运行时数据、
-个人待尝试清单一律 gitignore 不入库。
-
-## 第三方插件维护（fork / 收编治理）
-
-多个组件来自社区。改动前必读 [THIRD-PARTY.md](THIRD-PARTY.md)（来源 / 本地修改 / 升级流程）：
-
-- **改过的第三方 → fork 上游仓库**：本地改动以单 commit 提交在 fork 上，升级 =
-  `git fetch upstream && git merge upstream/main` 后对照 THIRD-PARTY.md 复查修改点；
-  不再 `subtree` 收编进汇总仓库。
-- **改第三方插件改完立即提交**（并行会话 git checkout 会清未提交工作）。
-
-## 写 DSH 插件的注意事项 / 最佳实践
-
-- **先查契约再写码**：Inspect Provider 拿确切签名；运行时调真实 Service / 听真实 Event，
-  别把 inspect 结果当业务数据缓存。
-- **服务依赖要声明**：硬依赖 `inject: ['serviceName']` 后访问 `ctx.serviceName`；可选服务用
-  `ctx.get('serviceName')` 处理 undefined。inject 是 Cordis 服务名非 entry id；无默认参数的
-  apply 要 `config ?? {}` 兜底。
-- **数据别序列化活对象**：Service / Session / Slot 是内部活数据，只读叶子字段，别整对象 dump。
-- **每个副作用都可逆**：挂在当前 fiber 上（`ctx.effect()` / `ctx.on()` / 返回 disposer 的官方
-  API），stop / update / undefine 时全部回收。
-- **Host ↔ Client 通信**：只走 package 私有 JSON 方法（Client `host.call` ↔ Host `harness.handle`），
-  只传无损 JSON；重活放 Host。
-- **版权 / 合规**：涉及第三方数据注意 UA / Referer / Cookie、防盗链、登录态隔离；隐私操作
-  （如把登录 URL 交给第三方）在 README 写清楚。
-- **保持子项目自成一体**：能力/安装/依赖/限制/License 放各自 README，根目录只罗列与链接。
-
-## 项目设计理念与约束（⚑ 强制）
-
-> 以下理念与约束源于对 [pi-agent](https://github.com/Ashutosh0428/pi-agent) 设计哲学的
-> 借鉴，结合本仓库 DSH 插件定位落地。**所有子项目的设计、开发、评审均须遵循。**
-
-### 设计理念（pi-agent 启发）
-
-- **极简主义 —「Bash is all you need」**：工具/模块/预设的数量与每请求 token 固定开销正相关。
-  每增加一个工具就增加 schema 开销，每增加一个预设就增加 system prompt 长度。**新增能力前先看能否用现有机制组合出来**，不做重复功。
-- **用户决定需要什么，而非工具替用户决定**：不堆预设/路由/模式切换。提供最基础的能力层，
-  让 LLM 推理决定怎么用。**智能来自 LLM 的思考，而非工具的编排**。
-- **成本控制从架构根源做起**：tool schema 精简（低频 demote/移除）、零多余上下文注入
-  （按需加载而非全量预载）、无复杂调度层（减少中间件 token 烧耗）。
-- **输出精炼、状态可见、操作可逆**：UI/UX 追求简洁，信息密度高但不杂乱，副作用全部可回收。
-
-### Pi 契约约束（⚑ 强制，源自 pi-agent 作者实践）
+## Pi 契约约束（⚑ 强制，源自 pi-agent 作者实践）
 
 > 以下约束源于 [pi-agent](https://github.com/Ashutosh0428/pi-agent) 两位作者的实战经验，
 > 作为**硬性审计标准**写入本仓库。每个插件的设计、评审、安装决策均须对照检验。
@@ -88,7 +29,7 @@ NOTES.md（经验档案） · plugins.json（来源真相清单） · scripts/�
 - **⚑ 用户决定需要什么**：插件适配用户工作流，而不是让用户适配插件；保持核心小，
   把选择权交给 skill / 扩展 / 脚本。不替用户做路由/模式/工具编排决策。
 
-### DSH 官方规则契约
+## DSH 官方规则契约（⚑ 强制）
 
 - **⚑ 不改动 DSH 源码**：所有修复只走插件 / settings / 预设层，**禁止修改 harness 内部包源码**。
 - **⚑ 契约先查 Inspect Provider**：写码前用 `cordis_inspect_list` / `cordis_inspect_query` 拿确切
@@ -101,7 +42,7 @@ NOTES.md（经验档案） · plugins.json（来源真相清单） · scripts/�
 - **⚑ 不破坏官方行为**：插件 patch 只追加/覆盖配置，不绕过官方安全门禁（api-proxy 准入、
   sandbox policy、capability ACL）。不 hack 官方 client.js 内部逻辑。
 
-### DSH-Store 准入契约（⚑ 强制，第三方商城上架门禁）
+## DSH-Store 准入契约（⚑ 强制，第三方商城上架门禁）
 
 > 契约**单一来源在本节**：所有伞下插件仓库的 AGENTS.md 只放指向本文件的指针，不复制内容。
 > 本伞下插件若面向第三方商城 [DSH-Store](https://github.com/AI-Scarlett/dsh-safe-plugin-manager)
@@ -131,7 +72,7 @@ NOTES.md（经验档案） · plugins.json（来源真相清单） · scripts/�
 - **被拒即整改**：收到 blocked / 候选拒绝（`statusReason`）后，定位违规点修复并重新提交；
   不得绕过门禁直接分发（手动安装入口只作临时通道，不受商城事务保护）。
 
-### DSH Standard（dsh-std）协议契约（⚑ 强制，生态互操作标准）
+## DSH Standard（dsh-std）协议契约（⚑ 强制，生态互操作标准）
 
 > 本伞下插件若实现、扩展或贡献 [DSH Standard](https://github.com/Yan-Zero/dsh-std)
 > （`@dsh-std/*` 生态通用互操作协议）相关协议，须遵守其 [AGENTS.md 契约](https://github.com/Yan-Zero/dsh-std/blob/main/AGENTS.md)，
@@ -153,22 +94,6 @@ NOTES.md（经验档案） · plugins.json（来源真相清单） · scripts/�
   替换重复材料时保持稳定文档路径。
 - **⚑ 验证**：改动代码/schema/包元数据/一致性行为后跑 `pnpm check`；交接前 `git diff --check`；
   保留工作树中与本任务无关的用户改动。
-
-## 经验档案（NOTES.md）
-
-**⚑ 强制落档**（呼应顶部）：每个任务结束前写入 NOTES.md，格式见顶部硬性约束。
-NOTES.md 是完整档案库（历史经验、踩坑、决策记录），**禁止整读**（按需读+索引+标题 grep）。
-
-## 脚本与治理
-
-- **清单一致性守护脚本**：`scripts/check-consistency.mjs`（验证 plugins.json id/type/source/repo/ref/path/fork-upstream）
-- **插件清单查询**：`scripts/plugin-manifest.mjs`（list/get/skills-src，install 双脚本共用）
-- **一键/批量安装脚本**：`scripts/install-plugins.mjs`（--only/--skip/--dry-run；走 GitHub 直装）
-- **第三方插件治理**：THIRD-PARTY.md 追踪来源/本地修改/升级流程
-- **本地开发**：插件仓库 clone 到伞目录（见「本地仓库组织约定」），profile/install 优先本地副本
-  （link/复制），改完刷新 GUI 即生效，稳定后 push。
-- **提交纪律**：每次改动（文档/代码/配置）完成后立即 `git add + commit`，不攒变更；对话结束后
-  执行 `git push` 推送到远端。并行会话 git checkout 会清未提交工作，改完即交避免丢失。
 
 ## License
 
