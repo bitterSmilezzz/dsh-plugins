@@ -1,4 +1,8 @@
-# 安装 / 部署（22 条）
+# 安装 / 部署（24 条）
+
+- **workbuddy2api 桥强制要求 CWD 有 config.json，env-only 会 fatal（2026-08-26，安装/桥托管）**：问题=自建 dsh-workbuddy 插件托管 workbuddy2api 子进程时，桥反复报 `load config: read config: open config.json: ... cannot find the file` 并以 code=1 退出（指数退避下重启 7 次）。原因=workbuddy2api 二进制启动**强制**读 CWD 下的 config.json——`WB2A_*` 环境变量只是覆盖层，不能代替配置文件存在性。解法=BridgeManager.init() 在 start() 前调用 writeBridgeConfig() 侧写完整 config.json（listen/api_key/auth_dir/state_file/region/cooldown/schedule/upstream 全默认值）到 dataDir，并以 cwd=dataDir 启动桥；env（WB2A_*）与 config.json **双写保持一致**。验证=桥日志由「open config.json 失败」转为 `loaded 1 cn account(s)` + `listening on 127.0.0.1:7863 (api_key=true)`，`/healthz` 200。可复现?是（删 dataDir/config.json 后重启桥必现 fatal）。
+
+- **插件包本地构建 tsdown MODULE_NOT_FOUND：node_modules 缺 tsdown 包（2026-08-26，构建/工具链）**：问题=`npm run build:client`（tsdown 打 client bundle）报 `Cannot find module .../dsh-workbuddy/node_modules/tsdown/dist/run.mjs`。原因=插件目录 node_modules 从未装进 tsdown（link 插件 + pnpm 提升环境下 `npm i -D tsdown` 装不进去）。解法=scripts/build.sh 在 .bin junction 块后追加 node -e：探测 DSH_CHECKOUT（含 packages/+vendor 的源码 checkout）后建 junction `node_modules/tsdown` → `$CHECKOUT/node_modules/tsdown`，探测不到只 warn 不中断。验证=构建产物 lib/client.js 正常生成、dev_build_plugin 出 tgz。可复现?是（删 node_modules/tsdown junction 后重跑 build:client 必现 MODULE_NOT_FOUND）。
 
 - **dsh-desktop-shell Windows 卸载（2026-08-20，安装/卸载）**：问题=用户反馈 dsh-desktop-shell 在 Windows 上没法用，要求从 dsh 卸掉。解法=`dsh plugin --profile web remove dsh-desktop-shell`（npm 版 dsh rc.8，D:\Program\nodejs\dsh.ps1）——web profile 的 package.json 中 bundles 与 dependencies 同步移除、node_modules 清理、`dsh --profile web --dump-config` 无残留且组合正常；web 与 dsh-tui 是独立 profile，卸载不影响 dsh-tui。坑=remove 输出不显式写 removed，以 package.json 与 node_modules 为准验证；NOTES.md 必须按 CRLF 追加（Node readFileSync/writeFileSync utf8 + \r\n）。可复现?是（同一命令可重装/重卸）。
 
