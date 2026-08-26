@@ -1,5 +1,6 @@
-# 安装 / 部署（24 条）
+# 安装 / 部署（25 条）
 
+- **M7 换装：旧 dsh-workbuddy/dsh-trae → 合并包 dsh-subscription-relay（2026-08-26，安装/合并）**：问题=两个插件合并为一个，如何在不重启、无重复 provider、零迁移的前提下在运行中的 web profile 完成换装。解法=①先 `dev_uninject_plugin` 依次卸 `@dsh-external/dsh-workbuddy`、`@dsh-external/dsh-trae`（卸 loader entry → 清注入 registry → 删 profile junction → 写 patch disabled 条目）；②再 `dev_inject_plugin D:\workspace\deepseek-harness\dsh-subscription-relay`（host+client 双半区即时生效）；③数据目录不动（$DSH_HOME/plugins/dsh-workbuddy / dsh-trae），登录态/积分/签到连续；④常规装配路径=dsh plugin add <本地包> + 重启 DSH Web（README 已写）。坑=①卸载要卸净——`dev_plugin_status` 应只剩新包一个 active entry；②workbuddy2api 仍要求 CWD 有 config.json——沿用旧 dataDir 的侧写文件即满足，别换目录；③守卫头 `x-dsh-subscription-relay: 1` 是路由硬门槛（漏头即 404）。验证=dev_plugin_status 单 entry；/api/dsh-subscription-relay/status ok:true 双桥（wb 13 模型 / trae 40 模型）账号原样（faith_bian / 用户8281296737）。可复现?是（装回旧两插件即双 provider；漏守卫头即 404）。
 - **workbuddy2api 桥强制要求 CWD 有 config.json，env-only 会 fatal（2026-08-26，安装/桥托管）**：问题=自建 dsh-workbuddy 插件托管 workbuddy2api 子进程时，桥反复报 `load config: read config: open config.json: ... cannot find the file` 并以 code=1 退出（指数退避下重启 7 次）。原因=workbuddy2api 二进制启动**强制**读 CWD 下的 config.json——`WB2A_*` 环境变量只是覆盖层，不能代替配置文件存在性。解法=BridgeManager.init() 在 start() 前调用 writeBridgeConfig() 侧写完整 config.json（listen/api_key/auth_dir/state_file/region/cooldown/schedule/upstream 全默认值）到 dataDir，并以 cwd=dataDir 启动桥；env（WB2A_*）与 config.json **双写保持一致**。验证=桥日志由「open config.json 失败」转为 `loaded 1 cn account(s)` + `listening on 127.0.0.1:7863 (api_key=true)`，`/healthz` 200。可复现?是（删 dataDir/config.json 后重启桥必现 fatal）。
 
 - **插件包本地构建 tsdown MODULE_NOT_FOUND：node_modules 缺 tsdown 包（2026-08-26，构建/工具链）**：问题=`npm run build:client`（tsdown 打 client bundle）报 `Cannot find module .../dsh-workbuddy/node_modules/tsdown/dist/run.mjs`。原因=插件目录 node_modules 从未装进 tsdown（link 插件 + pnpm 提升环境下 `npm i -D tsdown` 装不进去）。解法=scripts/build.sh 在 .bin junction 块后追加 node -e：探测 DSH_CHECKOUT（含 packages/+vendor 的源码 checkout）后建 junction `node_modules/tsdown` → `$CHECKOUT/node_modules/tsdown`，探测不到只 warn 不中断。验证=构建产物 lib/client.js 正常生成、dev_build_plugin 出 tgz。可复现?是（删 node_modules/tsdown junction 后重跑 build:client 必现 MODULE_NOT_FOUND）。
@@ -181,4 +182,5 @@
 
 - **已安装态核验**：profile bundles 含 `dsh-usage-dashboard`、node_modules 软链指向插件目录
   （改名后重装生效）；`node --check` 双文件 OK；apply 冒烟 16/16 + client 渲染 5/5。
+
 
