@@ -1,4 +1,10 @@
-# 性能 / 资源 / 优化（56 条）
+# 性能 / 资源 / 优化（57 条）
+- **dsh-asr-voice 静音案终局：用户实为 Tabbit(Chromium 150)浏览器，mictests.com 同样「could not capture any sounds」——Tabbit 全局拿不到麦克风，与插件/DSH 无关；系统层正常（设置音量条动+语音备忘录有声），修复=重装触发 TCC 重新授权或换 Chrome/Edge（2026-08-27，性能/诊断）**：
+问题=上一条「Chrome 麦克风采集整段静音」的判决需要修正主语：用户实际用的是 **Tabbit Browser**(com.tab-browser.Tabbit，基于 Chromium 150.0.7871.129)。追问后在标准测试页 mictests.com 同样失败（Testing failed because your microphone could not capture any sounds）→ **Tabbit 全局（任何网站）拿不到麦克风**，不是 DSH 页面、不是插件、不是 MiMo。macOS 系统输入正常（系统设置输入音量条动、语音备忘录录音正常）→ 根因在 **Tabbit 与 macOS TCC 之间**：自动更新/签名变化使旧授权失效时，macOS 对 Chromium 移植版常「成功但给静音流」而不报 NotAllowedError（getUserMedia 正常 resolve、MediaRecorder 录到全零 webm）。
+解法=①**换系统浏览器**（用户机器本就装有 Google Chrome.app 与 Microsoft Edge.app）——插件官方支持面，静音守卫/快速入框等全部修复与其无关，直接生效；②修 Tabbit：完全退出后 `sudo tccutil reset Microphone com.tab-browser.Tabbit` 清掉失效条目 → 重开 Tabbit → 触发系统弹窗点允许；或直接重装 Tabbit（新签名触发全新 TCC 授权）。
+坑=①**「无痕窗口/刷新」只解决缓存，永远解决不了「浏览器自身拿不到麦克风」**——这类排查一定要先做浏览器无关性验证（mictests 之类标准页），否则会白改好几轮插件；②**查 mac 系统设置音量条/语音备忘录只能证明「系统层 OK」，不能证明「该浏览器 OK」**——Chrome 内核分叉的输入流是独立于系统的；③TCC 失效的 Chromium fork 静音时 getUserMedia 不 reject，静音守卫（电平峰值判断）是这类场景的唯一兜底，避免把静音发给 ASR 幻觉出假文本；④query 期尽快用 `mdls -name kMDItemCFBundleIdentifier` 拿到 bundle id 才能 tccutil。
+验证=mictests.com 在 Tabbit 内失败 + 同一台机器系统输入正常，交叉互证；用户待切换 Chrome/Edge 或重置授权后复测。
+可复现?是（Tabbit 内任何网站麦克风全静音均可复现）。
 - **dsh-asr-voice 「yeah/好的/no text」根因：Chrome 麦克风采集整段数字静音，与插件/ASR 均无关（2026-08-27，性能/诊断）**：
 问题=用户报语音输入「一直卡/识别成 yeah/返回 no text」，历经多轮修复（快速入框、静音开关、optimize 超时、webm 优先、音量归一化）均无效，无痕窗口+强制刷新后依旧。
 原因=**落盘对比抓出铁证**：①host 在识别结果 ≤8 字符时自动保存转换后 WAV，异常时客户端再发 ?capture=1 存原始录音→同一轮拿到 raw.webm(1135B) 与 ok-Yeah.wav(109KB)；②ffmpeg 解码 raw.webm：**3.42s、非零样本占比 0.0%、全窗 RMS 0**——Chrome MediaRecorder 从源头采到的就是纯数字静音（opus 对静音压到 1KB 级是正常体积）；③转换后 WAV 同样是全零 → blobToWav16k 无辜（输入即静音）；④20:51 那次（无任何 Web Audio 介入）也是全零 → 与 analyser 无关；⑤1s/3s/8s/20s/60s/120s 语音和 1%/15% 音量直接 curl MiMo 全部秒级正确识别 → ASR 端彻底排除。结论=**用户机器上 Chrome 的麦克风输入就是静音**（系统默认输入设备为静音/虚拟设备/输入音量 0/外设未接，或 Chrome 设备句柄卡死）。MiMo 对静音音频会幻觉出短词（yeah/好的/嗯。）或空文本——之前全部怪象是同一根因的多种表现。
