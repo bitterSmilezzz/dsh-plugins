@@ -1,4 +1,11 @@
-# 性能 / 资源 / 优化（57 条）
+# 性能 / 资源 / 优化（58 条）
+- **dsh-asr-voice 静音案闭环：这台 MacBook Air 上 Chromium 全家桶(Chrome/Edge/Tabbit)音频采集全静音，Safari(WebKit)正常——机器级兼容问题，插件/ASR/麦克风全部无罪（2026-08-27，性能/诊断）**：
+问题=上上条判 Tabbit 全局静音后，用户改用 Chrome 测仍静音，一度怀疑插件守卫误报。最终 Safari 一次通过（你好 识别正常），闭环。
+原因=证据链：①Chrome 的 raw.webm（877B，2.52s）ffmpeg 解码仍 0% 非零样本——Chromium 在系统默认「MacBook Air 麦克风」上拿到纯数字静音；②系统设置输入音量条正常、语音备忘录录音正常、Safari 正常——同一台机、同一个默认输入设备，唯独 Chromium 采集路径静音；③恢复浏览器默认约束（关 AEC 也会致静音）与换守卫判定源（analyser→转换后 WAV 真实峰值）均未改变 Chrome 结果 → 不是插件参数问题。根因在 Chromium 的 macOS 音频服务与 Apple Silicon 内建麦克风/系统音频 HAL 的兼容（疑似采样率协商/格式协商失败被当作静音），属于浏览器层面，等 Chrome 更新或 OS 更新可能自然修复。
+解法=①**语音输入在该机器用 Safari**（插件天然支持：pickMime 落 mp4、decodeAudioData 保底），Chrome/Edge/Tabbit 干别的；②插件侧保留全部诊断资产：raw/webm 落盘文件自动带 UA 浏览器标签（uaTag）、错误提示条允许换行（详情不再被 nowrap 截断——之前用户连报错里的设备/浏览器信息都看不见）、静音守卫基于转换后 WAV 真实峰值。
+坑=①**测试必须区分「哪个浏览器跑的」**——用户口头说 Chrome 可能实际还在 Tabbit；落盘文件加 UA 标签后文件名自供证据（raw-Chrome150.webm 之类），不再依赖口头；②**提示条省略号/截断会吞掉诊断信息**：报错详情要用 wrap 而不是 nowrap，否则用户看到的和能复制的都不是完整信息；③纯 Chromium 系 WebRTC 静音但 Safari 正常时，别在插件里换采样率/约束去碰运气——先换浏览器定量，再决定是否动参数。
+验证=Safari 识别「你好」成功闭环；Chrome/Edge/Tabbit 的 raw 全部 0% 非零；commit 至 c88115e。
+可复现?是（该机器任意 Chromium 浏览器录任何内容均为纯静音，Safari 正常）。
 - **dsh-asr-voice 静音案终局：用户实为 Tabbit(Chromium 150)浏览器，mictests.com 同样「could not capture any sounds」——Tabbit 全局拿不到麦克风，与插件/DSH 无关；系统层正常（设置音量条动+语音备忘录有声），修复=重装触发 TCC 重新授权或换 Chrome/Edge（2026-08-27，性能/诊断）**：
 问题=上一条「Chrome 麦克风采集整段静音」的判决需要修正主语：用户实际用的是 **Tabbit Browser**(com.tab-browser.Tabbit，基于 Chromium 150.0.7871.129)。追问后在标准测试页 mictests.com 同样失败（Testing failed because your microphone could not capture any sounds）→ **Tabbit 全局（任何网站）拿不到麦克风**，不是 DSH 页面、不是插件、不是 MiMo。macOS 系统输入正常（系统设置输入音量条动、语音备忘录录音正常）→ 根因在 **Tabbit 与 macOS TCC 之间**：自动更新/签名变化使旧授权失效时，macOS 对 Chromium 移植版常「成功但给静音流」而不报 NotAllowedError（getUserMedia 正常 resolve、MediaRecorder 录到全零 webm）。
 解法=①**换系统浏览器**（用户机器本就装有 Google Chrome.app 与 Microsoft Edge.app）——插件官方支持面，静音守卫/快速入框等全部修复与其无关，直接生效；②修 Tabbit：完全退出后 `sudo tccutil reset Microphone com.tab-browser.Tabbit` 清掉失效条目 → 重开 Tabbit → 触发系统弹窗点允许；或直接重装 Tabbit（新签名触发全新 TCC 授权）。
