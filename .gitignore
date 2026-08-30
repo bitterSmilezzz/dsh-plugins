@@ -7,3 +7,5 @@ node_modules/
 plugin-list.txt
 dsh-desktop-shell/
 dsh-usage/
+# CodeGraph 自动索引目录，非仓库内容（历史上曾混入 perf 提交）
+.codegraph/

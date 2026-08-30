@@ -83,10 +83,15 @@ if (patchRel) {
   check('patch.parseable', 'cordis.patch.yml 存在', patchText.length > 0, patchRel)
 }
 
-// 补丁里的 entry id 收集（insert 块与顶层 id 行）
-const insertIds = [...patchText.matchAll(/-\s*id:\s*([\w-]+)/g)].map((m) => m[1])
+// 补丁里的 entry id 收集（insert 块与顶层 id 行）。
+// 先剔除 YAML 注释行——注释里的示例 `- id: xxx` 不是真实条目，否则会被误判为重复。
+const patchCode = patchText
+  .split('\n')
+  .filter((line) => !/^\s*#/.test(line))
+  .join('\n')
+const insertIds = [...patchCode.matchAll(/-\s*id:\s*([\w-]+)/g)].map((m) => m[1])
 // 顶层（无缩进）"- id:" 行 = 补丁级条目；insert 块内的 id 有缩进，不算。
-const topLevelIds = [...patchText.matchAll(/^- id:\s*([\w-]+)\s*$/gm)].map((m) => m[1])
+const topLevelIds = [...patchCode.matchAll(/^- id:\s*([\w-]+)\s*$/gm)].map((m) => m[1])
 const dup = insertIds.filter((id, i) => insertIds.indexOf(id) !== i)
 check('entry.unique', '补丁插入的 entry id 唯一', dup.length === 0, dup.length ? `重复: ${[...new Set(dup)].join(', ')}` : `${insertIds.length} 个 entry`)
 
@@ -134,7 +139,11 @@ if (hostEntry) {
 check('inject', 'host 入口声明 inject 硬依赖', injectOk, injectInfo)
 
 // ---------- tool 数量（Pi 契约：Context 是最贵资源——工具数默认 ≤3，>5 需评审，>10 必须拆分） ----------
-const toolSources = ['src', 'lib'].filter((d) => existsSync(resolve(root, d)))
+// 只数真源 src/：src/ 与 lib/ 同时扫会把同一工具计两次（真实 7 个报成 14 个），
+// 从而把「4–10 需评审」的 WARN 误升级成「>10 必须拆分」的 FAIL。
+// 仅当仓库没有 src/（产物型仓库）时才回退到 lib/。
+const hasSrc = existsSync(resolve(root, 'src'))
+const toolSources = hasSrc ? ['src'] : ['lib'].filter((d) => existsSync(resolve(root, d)))
 let toolCount = 0
 for (const dir of toolSources) {
   const walk = (d) => {
