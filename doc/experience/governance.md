@@ -1,4 +1,11 @@
 # 治理 / 决策 / 记录（106 条）
+- **新增固定源产物完整性门禁 `check-artifact-imports.mjs`（起因：`git add -u` 漏收新建产物）（2026-08-30，治理/设施）**：
+问题=notify 把 `summaryOf`/`isSubagent` 抽到 `src/notify-policy.ts` 后，提交用了 `git add -u`（只收**已跟踪**文件），于是 HEAD 里 `lib/system-notify.js` 已 `import './notify-policy.js'`、而 `lib/notify-policy.js` 根本不在仓库——从 GitHub 固定源装 notify 必 `ERR_MODULE_NOT_FOUND`。本地因为是 `link:` 安装（直接指向工作树）**完全看不出来**，`validate-all` 19 项也全绿。
+原因=「产物入库」与「源码入库」是两批文件；契约又禁止安装期构建脚本，所以少一个产物文件就是少一块运行时。伞仓库 19 项全是静态契约检查，没有任何一项验证发布态产物的模块图能否自洽。
+解法=新增 `scripts/check-artifact-imports.mjs`（零依赖）：递归扫 `lib/**/*.js`，抽静态 `from`/`import`/`require` 与被 `import()` 的**相对**说明符，逐个按 `target / .js / .mjs / dir/index.js` 四种解析结果查存在性，缺失即 exit 1；并接进 `validate-all.mjs`（它本就从 GitHub clone，校验的就是发布态），缺失计入 FAIL 且把 MISSING 明细带进结果行。
+坑=①**提交新建产物必须显式 `git add <路径>`，`-u` 不适用**；同理 `git add -A` 会把 `.codegraph/`、`.dsh/` 之类工具目录一起收进去（本仓经验档已记过两次）；②反向验证不可省——拿缺陷 tag v0.1.4 跑校验器必须报红（实测 exit=1 精确指到 `lib/system-notify.js → ./notify-policy.js`），否则门禁只是装饰；③本地 link 安装是这类缺文件问题的**盲区**，任何"能不能装"的结论都要以 clone/解包发布 tag 为准，不能以本地实例为准。
+验证=6 个已发布 tag 全部 clone 后跑校验器：notify v0.1.5 / model-selector v0.1.4 / retry v0.1.4 / shortcuts v0.1.2 / asr v0.1.5 / email v0.8.2 缺失均 0；`node scripts/validate-all.mjs` exit 0；v0.1.4 缺陷 tag exit 1。可复现?是（`git clone --branch v0.1.4` 后跑该校验器必红）。
+
 - **账号下 11 仓收编/归档定案 + 校验器两处假阳性修（2026-08-30，治理/契约）**：
 问题=用户要求"dsh 正常 + 我们 GitHub 账号下所有插件都能用且符合伞仓库契约，与最新版官方功能重叠的就归档"。先盘账号：11 仓（5 在用 + dsh-plugins 伞 + dsh-ui-tweaks + dsh-email + dsh-skills + DSH-Transparent-UI-Plugin + dsh-wallpaper-engine），而 `scripts/manifest.json` 只登记 5 仓 → 其余完全不过 19 项门禁。
 原因=重叠判定不能有主观成分；且 `validate-plugin.mjs` 自身有假阳性，会把合规仓库误判 FAIL。

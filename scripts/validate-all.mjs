@@ -29,7 +29,15 @@ for (const p of manifest.plugins) {
     const r = JSON.parse(out)
     reports.push(r)
     if (r.fail > 0) anyFail = true
-    console.log(`[${r.fail === 0 ? 'PASS' : 'FAIL'}] ${p.id}: ${r.pass} 通过 / ${r.warn} 提示 / ${r.fail} 失败`)
+    // 产物完整性：固定源安装时 lib/*.js 的相对 import 必须都能在仓库里解析到
+    let artifact = ''
+    try {
+      execFileSync('node', [resolve(root, 'scripts/check-artifact-imports.mjs'), dir], { encoding: 'utf8', stdio: 'pipe' })
+    } catch (e) {
+      anyFail = true
+      artifact = ` ${String((e.stdout || e.message || '')).split('\n').filter((l) => l.includes('MISSING')).join(' ; ')}`.slice(0, 200)
+    }
+    console.log(`[${r.fail === 0 && !artifact ? 'PASS' : 'FAIL'}] ${p.id}: ${r.pass} 通过 / ${r.warn} 提示 / ${r.fail} 失败${artifact}`)
   } catch (e) {
     anyFail = true
     console.log(`[FAIL] ${p.id}: 校验执行失败 — ${String(e.message || e).slice(0, 200)}`)
