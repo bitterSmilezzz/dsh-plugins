@@ -11,6 +11,7 @@
  *   [entry]     补丁插入的 entry id 唯一；未禁用/遮蔽官方组件
  *   [namespace] 包名不以 @deepseek-ai/ 开头
  *   [scripts]   preinstall/install/postinstall/prepare 显式列出（无则通过，报告）
+ *   [client]    声明 dsh.client 时 lib/client.js 必须存在且非空（缺失会让整个 profile 装配失败）
  *   [permission] README/manifest 含权限等级披露（low/medium/high/unknown）
  *   [readme]    README 存在且包含安装与权限说明；写明外部依赖与已知风险
  *   [fixed]     git 仓库存在，HEAD 为 40 位 commit（固定源）
@@ -102,6 +103,21 @@ const shadowsOfficial = insertIds.some((id) => id.includes('ui-settings') || id.
 const protectedOk = disabledOfficial.length === 0 && !shadowsOfficial
 check('entry.protected', '未禁用/遮蔽官方组件', protectedOk,
   disabledOfficial.length ? `禁用官方 entry: ${disabledOfficial.join(', ')}` : (topLevelIds.length ? `补丁含 ${topLevelIds.length} 个顶层条目` : '未动官方组件'))
+
+// ---------- client 半区一致性（声明 dsh.client 就必须有可加载产物） ----------
+// DSH 的 client-modules 在装配阶段就要求声明过的 client bundle 真实存在，
+// 缺失会让**整个 profile 起不来**（不是只坏这个插件）；build/test 全绿掩盖不了。
+const declaredClient = Boolean(pkg?.dsh?.client)
+const clientBundle = resolve(root, 'lib/client.js')
+const clientSize = existsSync(clientBundle) ? statSync(clientBundle).size : 0
+if (declaredClient) {
+  check('client.bundle', '声明 dsh.client 时 lib/client.js 必须存在且非空',
+    clientSize > 200, clientSize > 200 ? `lib/client.js ${String(clientSize)}B` : `缺失或过小（${String(clientSize)}B）→ profile 装配失败`)
+} else if (clientSize > 200) {
+  warn('client.bundle', '有 lib/client.js 但未声明 dsh.client（浏览器半区不会加载）', `lib/client.js ${String(clientSize)}B`)
+} else {
+  check('client.bundle', '纯 host 插件：未声明 dsh.client 且无 client 产物', true, 'host-only')
+}
 
 // ---------- README（DSH-Store 准入契约：README 完整 + 权限披露） ----------
 const readme = readText('README.md')
