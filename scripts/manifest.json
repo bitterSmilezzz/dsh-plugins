@@ -5,7 +5,6 @@
     { "id": "dsh-model-selector", "repo": "bitterSmilezzz/dsh-model-selector" },
     { "id": "dsh-notify", "repo": "bitterSmilezzz/dsh-notify" },
     { "id": "dsh-shortcuts", "repo": "bitterSmilezzz/dsh-shortcuts" },
-    { "id": "dsh-retry-settings", "repo": "bitterSmilezzz/dsh-retry-settings" },
-    { "id": "dsh-ui-tweaks", "repo": "bitterSmilezzz/dsh-ui-tweaks", "note": "已拆分为上述 4 包，待归档（回滚源）" }
+    { "id": "dsh-retry-settings", "repo": "bitterSmilezzz/dsh-retry-settings" }
   ]
 }
