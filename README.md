@@ -48,8 +48,21 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 | `dsh-wallpaper-engine` | 仅 Windows；注入的 3 个官方包在 alpha.2 已消失，且 host 半区无源码不可重建 | `dsh-wallpaper-engine-2026-08-30.tar.gz` |
 | `DSH-Transparent-UI-Plugin`（Aqua） | 与官方 `dsh-client-ui-theme` 正面重叠；包名违反 `@deepseek-ai/*` 命名空间契约；`tsdown.config.ts` 指向不存在的路径故不可重建 | `DSH-Transparent-UI-Plugin-2026-08-30.tar.gz` |
 
-> 退役仅指**移出本地工作区**（现停放在 `~/dsh-quarantine-20260830/`）；上表 5 个仓库的 GitHub
-> 远端仍保留，删除远端需逐仓单独决定。`dsh-ui-tweaks` 是唯一经明确指示双删（本地 + 远端）的。
+> **2026-08-31 收口**：上述退役仓的 **GitHub 远端已按指示全部删除**（`DSH-Transparent-UI-Plugin`、
+> `dsh-wallpaper-engine`、`dsh-skills`，加上此前双删的 `dsh-ui-tweaks`），账号现只剩伞仓库 +
+> 6 个在用插件。`dsh-computer-use` / `dsh-skin-runtime` 本就是非 git 目录、从未有远端。
+> 退役仓的本地目录停放在 `~/dsh-quarantine-20260830/`；归档为双形态：`.tar.gz`（含工作树与
+> `.git`）+ `.bundle`（单文件全历史）。
+>
+> ⚑ **删除远端前的强制核验**（本轮实测教训）：`dsh-wallpaper-engine` 本地是 `--depth 5`
+> **浅克隆**，只有 9 个 commit，而远端有 **85 个 commit + 4 个分支**（`main`/`mac`/
+> `scene-support`/`fix/npm-name-waifux-darkmode`）——直接删远端就会永久丢掉 76 个 commit。
+> 更要命的是浅克隆上 `git bundle --all` 会产出**父提交缺失、无法 clone 的残缺 bundle**
+> （`Failed to traverse parents of commit …`），文件照样生成、看着像成功。所以删之前必须：
+> ① `git rev-parse --is-shallow-repository` 为真 → 先 `--unshallow` 或重新全量 clone；
+> ② 把 `refs/remotes/origin/*` 转成**本地分支**（clone 不会把源仓的 remote-tracking ref 再导出，
+> 否则 bundle 回 clone 只剩 `main`）；
+> ③ 用 bundle **实际 clone 回来**比对 commit 数与分支数，而不是只看 `bundle verify` 或文件大小。
 
 ## 脚本
 

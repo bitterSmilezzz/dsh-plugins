@@ -1,4 +1,11 @@
 # 治理 / 决策 / 记录（106 条）
+- **退役仓 GitHub 远端删除：浅克隆差点造成 76 个 commit 永久丢失（2026-08-31，治理/归档）**：
+问题=用户指示把已退役插件的远端删掉。待删 3 个（`DSH-Transparent-UI-Plugin`、`dsh-wallpaper-engine`、`dsh-skills`；`dsh-computer-use`/`dsh-skin-runtime` 本就是非 git 目录、无远端）。
+原因=删除仓库不可逆，唯一凭据是本地归档；而**归档可能是残缺的却不自知**。
+解法=①删前先做"可恢复性实测"：把每个 tar 解出来比对 `rev-list --count --all` 与 HEAD，再为三仓各补一份 `.bundle`（与 ui-tweaks 先例同款）；②**wallpaper-engine 的 bundle 回 clone 直接失败**：`Failed to traverse parents of commit 941b3ff…`——根因是我当初用 `--depth 5` 浅克隆它，本地仅 9 commit，而远端实有 **85 commit + 4 分支**（`main`/`mac`/`scene-support`/`fix/npm-name-waifux-darkmode`）；浅克隆上做 `git bundle --all` 仍会正常写出 5.9M 文件、`list-heads` 也列全 6 个 ref，**唯一暴露方式是真去 clone 一遍**；③重新全量 clone → 把 `refs/remotes/origin/*` **转成本地分支**（否则 clone 只带走 `main`，remote-tracking ref 不会被再导出，回 clone 后 `origin/mac` unknown revision）→ 重建 bundle 与 tar → 回 clone 得 4 分支 / 85 commit 全等；④确认 profile 无生效引用（`cordis.patch.yml` 里的 aqua 只是注释、`bundles`/`dependencies`/`node_modules` 均无）后 `gh api -X DELETE` 三仓，复核 API 404 + `git ls-remote` 不可访问；⑤把注释改成如实的历史注记，并 `--dump-config` 复验 profile 仍可 compose。
+坑=①**"归档存在/体积正常/`bundle verify` 通过"都不是可恢复性的证据**，只有 clone 回来对数才算——伞仓库经验档里"清仓 commit 与本地操作不同步、归档必须当场验证文件存在"是同一条教训的加强版；②浅克隆仓库在归档/推送/tag 前一律先 `git rev-parse --is-shallow-repository` 判一下，`--unshallow` 或直接重 clone；③删远端前顺手把账号仓库清单与伞仓库 README 登记表对齐（本轮把 10 仓收口到 7 仓 = 伞 + 6 在用），否则下一个人还会去排查已不存在的仓库。
+验证=三仓 API 均 404、`git ls-remote` 报 not found；账号现存 7 仓（6 插件 + dsh-plugins）；Aqua 72/72、skills 18/18、wallpaper 85/85 commit 与 4 分支回 clone 全等；`dsh --profile web --dump-config` exit 0 且 compose 树内零退役仓引用。可复现?是（对浅克隆仓 `git bundle create x --all` 后 `git clone x` 必现 `Failed to traverse parents`）。
+
 - **新增固定源产物完整性门禁 `check-artifact-imports.mjs`（起因：`git add -u` 漏收新建产物）（2026-08-30，治理/设施）**：
 问题=notify 把 `summaryOf`/`isSubagent` 抽到 `src/notify-policy.ts` 后，提交用了 `git add -u`（只收**已跟踪**文件），于是 HEAD 里 `lib/system-notify.js` 已 `import './notify-policy.js'`、而 `lib/notify-policy.js` 根本不在仓库——从 GitHub 固定源装 notify 必 `ERR_MODULE_NOT_FOUND`。本地因为是 `link:` 安装（直接指向工作树）**完全看不出来**，`validate-all` 19 项也全绿。
 原因=「产物入库」与「源码入库」是两批文件；契约又禁止安装期构建脚本，所以少一个产物文件就是少一块运行时。伞仓库 19 项全是静态契约检查，没有任何一项验证发布态产物的模块图能否自洽。
