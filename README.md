@@ -34,7 +34,7 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 | `dsh-model-selector` | 0.1.6 | 13 | 20/20 |
 | `dsh-retry-settings` | 0.1.4 | 13 | 20/20 |
 | `dsh-shortcuts` | 0.1.3 | 7 | 20/20 |
-| `dsh-asr-voice` | 0.1.6 ⚠ main 比 tag `v0.1.6` 领先 3 个提交（凭据迁移 + 冻结修复 + 三步向导）但未 bump 未打 tag，固定源安装拿不到这批 | 36 | 20/20 |
+| `dsh-asr-voice` | 0.1.7（发版 tag `v0.1.7`：API key 迁 credentials + 宿主冻结数组脱冻 + 设置卡三步向导） | 36 | 20/20 |
 | `dsh-email`（fork 自 STARDUSTLC666） | 0.8.4 | 78 | 19/20（唯一提示＝7 工具需专项评审，已在 README 记录结论） |
 
 **已退役 · 本地不再使用**（副本一律在 `doc/archives/`；无 git 历史的用 tar 含 `.git`，有历史的用 bundle）：
