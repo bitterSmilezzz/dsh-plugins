@@ -42,7 +42,7 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 | 仓库 | 退役原因 | 归档 |
 | --- | --- | --- |
 | `dsh-ui-tweaks` | 拆分前的合并包，已被上面 4 个插件取代；本地与远端均已删除 | `dsh-ui-tweaks-2026-08-30.bundle`（48 commits + tag，实测可 clone 恢复） |
-| `dsh-computer-use` | 非 git 仓库（无历史、不可固定源分发）；8 个宿主工具超 Pi 契约 | `dsh-computer-use-2026-08-30.tar.gz` |
+| `dsh-computer-use` | 非 git 仓库（无历史、不可固定源分发）；8 个宿主工具超 Pi 契约 | `dsh-computer-use-2026-08-31.tar.gz`（194 文件；⚠ 08-30 版整棵 `native/` 漏档，丢了 13 个手写 Swift 源，已废弃） |
 | `dsh-skin-runtime` | 非 git 仓库；效果引擎与 Aqua 重复 2048 行 | `dsh-skin-runtime-2026-08-30.tar.gz` |
 | `dsh-skills` | 纯技能包（非 bundle 插件，不可上架）；内容已迁至 OpenViking 技能空间 | `dsh-skills-2026-08-30.tar.gz` |
 | `dsh-wallpaper-engine` | 仅 Windows；注入的 3 个官方包在 alpha.2 已消失，且 host 半区无源码不可重建 | `dsh-wallpaper-engine-2026-08-30.tar.gz` |
@@ -51,8 +51,11 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 > **2026-08-31 收口**：上述退役仓的 **GitHub 远端已按指示全部删除**（`DSH-Transparent-UI-Plugin`、
 > `dsh-wallpaper-engine`、`dsh-skills`，加上此前双删的 `dsh-ui-tweaks`），账号现只剩伞仓库 +
 > 6 个在用插件。`dsh-computer-use` / `dsh-skin-runtime` 本就是非 git 目录、从未有远端。
-> 退役仓的本地目录停放在 `~/dsh-quarantine-20260830/`；归档为双形态：`.tar.gz`（含工作树与
-> `.git`）+ `.bundle`（单文件全历史）。
+> 退役仓的本地副本已于 2026-08-31 清空（`~/dsh-quarantine-20260830/` 701M 已删），
+> **`doc/archives/` 现在是唯一副本**。归档为双形态：`.tar.gz`（工作树，排除可再生产物）
+> + `.bundle`（单文件全历史）。删除前的核验口径：tar 用「解包 + `diff -r`」比对到 0 行差异，
+> bundle 必须在临时 git 仓内 `git bundle verify`（在非 git 目录跑会假报 `need a repository`），
+> 并对最大的一份做真实 clone-back 计数比对。
 >
 > ⚑ **删除远端前的强制核验**（本轮实测教训）：`dsh-wallpaper-engine` 本地是 `--depth 5`
 > **浅克隆**，只有 9 个 commit，而远端有 **85 个 commit + 4 个分支**（`main`/`mac`/
