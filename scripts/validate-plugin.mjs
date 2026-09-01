@@ -188,9 +188,10 @@ let tagInfo = '无 git tag'
 let versionMatches = true
 try {
   if (existsSync(resolve(root, '.git'))) {
-    const tags = execFileSync('git', ['-C', root, 'tag'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
+    // 字典序会让 v0.1.10 排在 v0.1.9 之前，必须用版本序取最新 tag。
+    const tags = execFileSync('git', ['-C', root, 'tag', '--sort=-v:refname'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
     if (tags.length > 0) {
-      const latest = tags[tags.length - 1].replace(/^v/, '')
+      const latest = tags[0].replace(/^v/, '')
       tagInfo = `最新 tag v${latest}`
       versionMatches = latest === (pkg?.version ?? '')
     }
