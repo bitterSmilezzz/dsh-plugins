@@ -63,6 +63,7 @@ const probe = await (async () => {
       effortValueVisible: vis(value),
       effortDesc: desc?.textContent?.trim().slice(0, 60) ?? null,
       badges: [...document.querySelectorAll('.dms-badge')].length,
+      badgeTitles: [...document.querySelectorAll('.dms-badge')].map((b) => b.getAttribute('title') ?? ''),
       providerTags: [...document.querySelectorAll('.dms-model-option-provider')].length,
       optionRows: [...document.querySelectorAll('.dms-model-option')].length,
     }
@@ -88,11 +89,39 @@ const probe = await (async () => {
   })
   await search.fill('')
   await page.keyboard.press('Escape')
+  // Short viewport: the menu must stay inside the viewport and the model list
+  // must scroll instead of being cut off (covers test 60's resize scenario,
+  // which the agent-qa LLM judge cannot execute — it has no resize tool).
+  // The upward/downward DIRECTION decision itself is covered by unit tests on
+  // menuFit.ts (dmsMenuAbove/dmsBelowMaxHeight), not by a browser stub — a
+  // fresh conversation has no scrollable content, so the judge cannot move the
+  // trigger near the viewport top to reproduce the downward case.
+  await page.setViewportSize({ width: 1440, height: 400 })
+  await page.waitForTimeout(200)
+  const short = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    const trigger = document.querySelector('.dms-trigger')
+    trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    trigger.click()
+    await sleep(600)
+    const menu = document.querySelector('.dms-menu')
+    const groups = document.querySelector('.dms-groups')
+    const mrect = menu?.getBoundingClientRect()
+    return {
+      shortMenuPresent: menu !== null,
+      shortMenuInsideViewport: mrect ? mrect.top >= 0 && mrect.bottom <= innerHeight : null,
+      shortMenuHeight: mrect ? Math.round(mrect.height) : null,
+      shortViewportHeight: innerHeight,
+      shortGroupsScrollable: groups ? groups.scrollHeight > groups.clientHeight : null,
+      shortGroupsOverflowY: groups ? getComputedStyle(groups).overflowY : null,
+    }
+  })
+  await page.keyboard.press('Escape')
   await browser.close()
-  return { out, styleOf, errors }
+  return { out, styleOf, errors, short }
 })()
 
-const report = { ...probe.out, ...probe.styleOf, consoleErrors: probe.errors.slice(0, 3) }
+const report = { ...probe.out, ...probe.styleOf, ...probe.short, consoleErrors: probe.errors.slice(0, 3) }
 const fails = []
 if (!report.triggerVisible) fails.push('seat trigger not visible')
 if (!report.menuPresent) fails.push('menu did not open')
@@ -107,6 +136,16 @@ if (report.sliderPresent && (!report.effortValue || !report.effortValueVisible))
 if (report.searchRows === 0) fails.push('search returned no rows (cannot judge provider tag)')
 if (report.searchRows > 0 && report.searchProviderTags === 0) fails.push('no provider tag in search results')
 if (report.tag && (!report.tag.visible || parseFloat(report.tag.fontSize) >= parseFloat(report.tag.nameFontSize) || report.tag.color === 'rgba(0, 0, 0, 0)')) fails.push('provider tag not legible-as-secondary')
+// 推理徽章必须带非空 title（headless 下 hover 弹不出原生 title，agent-qa LLM
+// judge 看不到；这里是确定性断言）。
+if (report.badges > 0 && report.badgeTitles.some((t) => t === '')) fails.push(`badge without title (${report.badges} badges)`)
+if (report.badges > 0 && !report.badgeTitles.some((t) => t.length > 0)) fails.push('no badge carries a non-empty title hint')
+// 短视口：菜单必须仍在视口内，且模型列表可滚动（而不是被裁掉）。
+// 向上/向下弹的方向决策本身由 menuFit.ts 的单测覆盖（浏览器 stub 会造成
+// 布局与决策不一致的人为场景，故不在 DOM 层断言方向翻转）。
+if (report.shortMenuPresent !== true) fails.push('short viewport: menu did not open')
+if (report.shortMenuInsideViewport !== true) fails.push('short viewport: menu overflows viewport')
+if (report.shortGroupsScrollable !== true) fails.push(`short viewport: list not scrollable (overflowY=${report.shortGroupsOverflowY})`)
 console.log(JSON.stringify(report, null, 1))
 console.log(fails.length ? `FAIL ${fails.length}: ${fails.join('; ')}` : 'PASS (read-only subset)')
 process.exit(fails.length ? 1 : 0)

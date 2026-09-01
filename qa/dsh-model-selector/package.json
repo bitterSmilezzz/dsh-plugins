@@ -9,7 +9,8 @@
     "run": "agent-qa run tests/web/*.yaml --headless",
     "probe": "node checks/dom-probe.mjs",
     "axe": "node checks/axe-probe.mjs",
-    "sweep": "node checks/model-sweep.mjs"
+    "sweep": "node checks/model-sweep.mjs",
+    "toast": "node checks/toast-probe.mjs"
   },
   "devDependencies": {
     "@vostride/agent-qa-subscription-auth": "^0.1.21",

@@ -70,9 +70,12 @@ npx --no-install agent-qa run tests/web/*.yaml --headless
 
 | 脚本 | 干什么 | 需要 LLM |
 |---|---|---|
-| `dom-probe.mjs` | 打开座位菜单，硬断言 role 嵌套、`aria-checked` 唯一、选中行底色与兄弟不同、滑杆读数可见、供应商标 10px<12px、菜单不出视口、console 无错 | 否 |
+| `dom-probe.mjs` | 打开座位菜单，硬断言 role 嵌套、`aria-checked` 唯一、选中行底色与兄弟不同、滑杆读数可见、供应商标 10px<12px、菜单不出视口、推理徽章带非空 title、短视口下菜单仍在视口内且列表可滚动、console 无错 | 否 |
+| `toast-probe.mjs` | 点击推理模型行后 50ms 采样 body 4.2s，硬断言官方 Toast（`body > [role=alert]`）确实弹出——补 agent-qa LLM 判定太慢抓不到的瞬时窗口 | 否 |
 | `axe-probe.mjs` | axe-core 跑整页，菜单开/关两种状态，输出违规规则 + 节点 | 否 |
 | `model-sweep.mjs` | 扫某端点全部模型的「图 + required tool_choice」能力 | 否 |
+
+LLM 判定盲区与探针分工：toast 是「hold 3s + fade 1s」的瞬时元素，agent-qa 每步截图+LLM 分析要 30–90s，必然错过——归 `toast-probe.mjs`；推理徽章的原生 `title` 在 headless 截图与 ARIA 树里都不可见，归 `dom-probe.mjs` 断言属性；短视口滚动钳位需要改视口尺寸、agent-qa 没有 resize 工具，也归 `dom-probe.mjs`。三条 agent-qa 用例（10/50/60）只覆盖 judge 能验证的持久交互流。
 
 `services.accessibility.failOnViolation: true` 会因每一步后的 axe 结果直接判步骤失败。
 唯一关掉的是 `scrollable-region-focusable`——那是官方工具详情面板（hash 类名 `_2ctAZa_body`）自己的

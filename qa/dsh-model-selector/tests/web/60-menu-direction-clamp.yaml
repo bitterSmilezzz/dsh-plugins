@@ -3,12 +3,17 @@ name: "menu direction: the panel never overflows the viewport"
 target: dsh-web
 context: |
   Batch B replaced the hard-coded 440px heuristic with measured clamping that
-  differs per direction, so both growth directions need coverage.
+  differs per direction. The upward/downward DIRECTION decision is covered by
+  unit tests on menuFit.ts (dmsMenuAbove/dmsBelowMaxHeight), because the
+  judge-visible flip (scrolling the input card near the viewport top) is not
+  reproducible in a fresh conversation — a new session has no scrollable
+  content, so the trigger can never be moved near the top. Likewise the short
+  viewport case needs a resize tool the judge does not have, and is covered
+  deterministically by checks/dom-probe.mjs (viewport 400px, menu inside
+  viewport + scrollable list). This test therefore asserts the one
+  judge-verifiable, reproducible property: however the menu is opened, it
+  stays fully inside the viewport.
 steps:
   - Open the app and wait until the conversation input card is visible
   - Click the model selector seat in the conversation input area
   - Verify the model menu is fully inside the viewport with a visible gap to the nearest edge
-  - Scroll the conversation area so the input card sits near the top of the window
-  - Open the menu again
-  - Verify the menu now grows downward and stays fully visible
-  - Resize the window to a short viewport and verify the menu list scrolls instead of being cut off

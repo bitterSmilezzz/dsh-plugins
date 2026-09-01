@@ -3,14 +3,20 @@ name: "model seat: a selection is announced outside the menu"
 target: dsh-web
 context: |
   dsh-model-selector replaces the composer model seat. Feedback that only
-  lives inside the menu is invisible once the menu closes, so the toast is the
-  surface under test.
+  lives inside the menu is invisible once the menu closes, so the seat label
+  update is the durable surface under test here.
+
+  The switch itself also raises a transient toast (hold 3s + fade 1s, body
+  portal role=alert). The agent-qa LLM judge samples the page only every
+  30-90s, so it can never catch that window; the toast's momentary emission is
+  asserted deterministically by checks/toast-probe.mjs instead. This test
+  covers the state that must persist: menu closed, seat label updated, no
+  error text left in the composer area.
 steps:
   - Open the app and wait until the conversation input card is visible
   - Click the model selector seat in the conversation input area
   - Verify a menu opens listing model rows grouped by provider
   - Click a model row that is not the one currently marked selected
   - Verify the menu closes after the pick
-  - Verify a toast appears near the input card reporting the switch
   - Verify the seat now shows the picked model name
   - Verify no error text is left visible inside the composer area

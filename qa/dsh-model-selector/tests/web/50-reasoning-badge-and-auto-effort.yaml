@@ -3,13 +3,23 @@ name: "reasoning models say what the switch will do to effort"
 target: dsh-web
 context: |
   A switch lands on the strongest level rather than the model default. The
-  product decision is to keep that behaviour but say so on the row and in the
-  toast after the switch.
+  product decision is to keep that behaviour but say so on the row (the
+  reasoning badge carries the hint in its title attribute) and in the toast
+  after the switch.
+
+  Two transient surfaces cannot be verified by the agent-qa LLM judge: the
+  native title tooltip never renders in a headless screenshot or the ARIA
+  tree, and the auto-effort toast auto-dismisses (hold 3s + fade 1s) long
+  before a step's 30-90s judge pass. Both are asserted deterministically by
+  the probes instead: checks/dom-probe.mjs requires every reasoning badge to
+  carry a non-empty title, and checks/toast-probe.mjs proves the toast that
+  names the landed level is emitted after a reasoning-model switch. This test
+  covers the durable, judge-verifiable flow: the badge is visible, the switch
+  applies, and the seat label reports the landed effort level.
 steps:
   - Open the app and wait until the conversation input card is visible
   - Click the model selector seat in the conversation input area
   - Verify a row for a reasoning-capable model carries a reasoning badge
-  - Hover that row and verify a tooltip explains that switching lands on the strongest level
   - Click that reasoning model
-  - Verify the toast after the switch names the level it landed on
-  - Reopen the menu and verify the seat label shows that effort level
+  - Verify the seat now shows the picked model name with an effort level label
+  - Reopen the menu and verify the effort slider sits on the strongest level
