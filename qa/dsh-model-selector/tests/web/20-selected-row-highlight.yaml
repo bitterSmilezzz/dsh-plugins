@@ -1,0 +1,13 @@
+test-id: t_alive-ropy-rud-dor-stud-cow-kip-trash-valid-sia
+name: "model seat: the selected row is visibly highlighted"
+target: dsh-web
+context: |
+  Batch A fixed a rewrite regression where the selected-row class had no CSS
+  rule at all, so the current model was only marked by a check glyph.
+steps:
+  - Open the app and wait until the conversation input card is visible
+  - Click the model selector seat in the conversation input area
+  - Verify exactly one model row is marked as the current selection
+  - Verify that row is visually distinguishable from its neighbours by a background fill, not only by an icon
+  - Type the current model's name into the menu search box
+  - Verify the filtered row for the current model is still highlighted

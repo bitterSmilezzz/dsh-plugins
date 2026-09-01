@@ -1,0 +1,14 @@
+test-id: t_verd-dire-obe-sou-ning-live-eros-alida-last-ati
+name: "menu exposes menu / menuitemradio / aria-checked"
+target: dsh-web
+context: |
+  The single-pane rewrite dropped the semantics the official seat had. Batch A
+  restored them; screen readers are the only consumer that can see this.
+steps:
+  - Open the app and wait until the conversation input card is visible
+  - Click the model selector seat in the conversation input area
+  - Verify the model list is exposed as a menu with an accessible name
+  - Verify each model row is exposed as a radio menu item
+  - Verify exactly one row reports checked state and it is the current model
+  - Press the Down arrow key twice and verify focus moves across rows without opening a nested list
+  - Press Escape and verify the menu closes and focus returns to the seat

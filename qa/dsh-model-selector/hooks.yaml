@@ -1,0 +1,2 @@
+# No hooks: agent-qa hooks need a running Docker daemon, and none of these tests require setup/teardown.
+hooks: []

@@ -1,0 +1,16 @@
+test-id: t_needs-chat-tema-given-grid-label-acer-iran-ante-until
+name: "effort slider: the level under the knob is readable"
+target: dsh-web
+context: |
+  The slider used to expose levels only through aria-valuetext. Batch B added a
+  visible level name plus the adapter-provided description.
+steps:
+  - Open the app and wait until the conversation input card is visible
+  - Click the model selector seat in the conversation input area
+  - Select a model that offers reasoning levels
+  - Verify the effort slider is visible below the model list
+  - Verify the current level is shown as visible text next to the slider
+  - Drag the slider knob to a different level
+  - Verify the visible level text follows the drag
+  - Verify a description line appears when the level has one
+  - Release on a level and verify the slider settles on that level

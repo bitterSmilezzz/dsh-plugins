@@ -1,0 +1,14 @@
+test-id: t_ping-ouch-endue-phi-gray-chien-road-save-contra-wale
+name: "restored styles hold up in both themes"
+target: dsh-web
+context: |
+  Selected-row fill, provider tag and slider readout are all new token-based
+  rules; the light theme needed its own overrides for the effort visuals.
+steps:
+  - Open the app in the dark theme and wait until the conversation input card is visible
+  - Open the model selector menu
+  - Verify the selected row, provider tag, slider readout and badges are all legible against the menu background
+  - Switch the app to the light theme
+  - Reload the page and open the model selector menu
+  - Verify the same elements stay legible and none of them disappears into the background
+  - Verify the accessibility service reports no contrast violation on the open menu

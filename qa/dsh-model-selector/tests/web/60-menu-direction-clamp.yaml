@@ -1,0 +1,14 @@
+test-id: t_hoven-unique-uncate-total-oil-olson-brown-vela-green-rich
+name: "menu direction: the panel never overflows the viewport"
+target: dsh-web
+context: |
+  Batch B replaced the hard-coded 440px heuristic with measured clamping that
+  differs per direction, so both growth directions need coverage.
+steps:
+  - Open the app and wait until the conversation input card is visible
+  - Click the model selector seat in the conversation input area
+  - Verify the model menu is fully inside the viewport with a visible gap to the nearest edge
+  - Scroll the conversation area so the input card sits near the top of the window
+  - Open the menu again
+  - Verify the menu now grows downward and stays fully visible
+  - Resize the window to a short viewport and verify the menu list scrolls instead of being cut off

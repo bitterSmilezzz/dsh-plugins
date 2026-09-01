@@ -1,0 +1,19 @@
+{
+  "name": "qa-dsh-model-selector",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "agent-qa E2E + hard-DOM checks for dsh-model-selector. Kept out of the published plugin package on purpose.",
+  "scripts": {
+    "doctor": "agent-qa doctor",
+    "run": "agent-qa run tests/web/*.yaml --headless",
+    "probe": "node checks/dom-probe.mjs",
+    "axe": "node checks/axe-probe.mjs",
+    "sweep": "node checks/model-sweep.mjs"
+  },
+  "devDependencies": {
+    "@vostride/agent-qa-subscription-auth": "^0.1.21",
+    "agent-qa": "^0.1.21",
+    "axe-core": "^4.13.0"
+  }
+}

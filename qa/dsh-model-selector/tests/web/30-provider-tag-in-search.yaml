@@ -1,0 +1,13 @@
+test-id: t_tox-off-city-ush-joe-silent-eking-peed-oint-datum
+name: "search: same-name models stay distinguishable by provider tag"
+target: dsh-web
+context: |
+  Batch A restored `.dms-model-option-provider`, the only element that
+  separates two providers offering the same model id. It shipped with zero CSS.
+steps:
+  - Open the app and wait until the conversation input card is visible
+  - Click the model selector seat in the conversation input area
+  - Type a model name that appears under more than one provider
+  - Verify the filtered list shows more than one row with the same model name
+  - Verify each of those rows carries a provider label rendered as small secondary text
+  - Verify the provider labels are readable against both the row background and the menu background

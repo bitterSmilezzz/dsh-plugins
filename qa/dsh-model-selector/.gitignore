@@ -1,0 +1,6 @@
+node_modules/
+.agent-qa/
+agent-qa-memory/
+.env
+.env.secrets.local
+agent-qa.local.yaml

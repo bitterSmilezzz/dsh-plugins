@@ -1,0 +1,79 @@
+# agent-qa workspace for dsh-model-selector (0.1.7)
+# Lives OUTSIDE the plugin repo on purpose: agent-qa writes cache/ and
+# agent-qa-memory/ state next to the config, and neither belongs in a package
+# published to DSH-Store.
+workspace:
+  testMatch:
+    - tests/web/**/*.yaml
+  suiteMatch:
+    - suites/**/*.suite.yaml
+  hooksFile: hooks.yaml
+  agentRules: ./agent-rules.md
+  envFile: .env
+  secretsFile: .env.secrets.local
+services:
+  cache:
+    dir: .agent-qa/cache
+    ttl: 7d
+  accessibility:
+    enabled: true
+    standard: wcag2aa
+    runAfter: every-step
+    # Fail the run on contrast/aria violations: the 0.1.7 round re-added
+    # role=menu / menuitemradio / aria-checked and small tertiary text in both
+    # themes, so a11y regressions here are exactly the ones we care about.
+    failOnViolation: true
+    # The one rule the host itself breaks: the official tool-detail pane
+    # (hashed class `_2ctAZa_body`) is a scrollable region with no focusable
+    # content. Not ours to fix, and it would fail every step of every test.
+    # Our own subtree is checked independently by checks/axe-probe.mjs.
+    disableRules:
+      - scrollable-region-focusable
+  memory:
+    dir: agent-qa-memory
+  authState:
+    dir: .agent-qa/auth-states
+plugins:
+  auth:
+    - package: "@vostride/agent-qa-subscription-auth"
+use:
+  # Picks which registry.llms entry drives the run. "default" is the Claude
+  # subscription entry, kept as a fallback.
+  llm: qwen-go
+  browser:
+    name: chromium
+    headless: true
+    # 420px menu + composer card + trigger room to flip direction.
+    viewport:
+      width: 1440
+      height: 900
+  mobile:
+    appState: preserve
+registry:
+  llms:
+    - name: qwen-go
+      provider: openai-compatible
+      # qwen3.8-flash sees images, but its thinking mode rejects the required/
+      # object tool_choice the planner forces each step. Swept all 33 models on
+      # this endpoint; passing both image + required tool_choice: qwen3.7-plus /
+      # 3.6-plus / 3.5-plus, qwen3.8-max, kimi-k3, longcat-2.0, hy4-preview.
+      model: qwen3.7-plus
+      baseURL: https://opencode.ai/zen/go/v1
+      # Credential comes from ~/.config/opencode/opencode.json ("opencodego");
+      # saved with `agent-qa auth set --config qwen-go --type api-key`.
+      screenshotSize: 50kb
+      effectiveResolution: 500
+    - name: default
+      provider: anthropic-subscription
+      model: claude-sonnet-4-6
+      screenshotSize: 50kb
+      effectiveResolution: 500
+  targets:
+    # No env interpolation in this file, and agent-qa.local.yaml only overrides
+    # devices/apps/providers — never registry.targets. So the authenticated URL
+    # (`dsh web` prints it at startup; the bare URL 401s) must either be written
+    # into `url` below, or captured once with
+    # `agent-qa auth-state capture --target dsh-web --name token`.
+    dsh-web:
+      platform: web
+      url: http://127.0.0.1:3080/
