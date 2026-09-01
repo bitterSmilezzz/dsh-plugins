@@ -1,4 +1,5 @@
 # 治理 / 决策 / 记录（106 条）
+- **密钥不进仓库：推送前核查「密钥只在本机配置、不在仓库、不在已推送提交」（2026-09-01，治理/安全习惯）**：背景=dsh-asr-voice 设置卡修复（d8d3280）推送前，用户提醒「不能传 key 到远端」——插件涉及 MiMo API key（`MIMO_API_KEY`），需确认仓库零密钥。核查步骤=①`git grep -iE '(sk-[a-z0-9]{16,}|api[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9]{12,})'` 扫工作树+已提交（`git grep` 默认含 HEAD 内容）；②`git diff --name-only <base>..origin/main` 列最近提交文件清单，逐个确认无配置/凭据文件；③`git ls-files | grep -iE '(settings|credential|secret|\.env|key)'` 查仓库内是否有密钥载体类文件——命中项要人工分辨是源码（如 `src/settings.ts` 的 schema）还是真实配置；④对仓库内 schema 类文件，确认 `apiKey` 字段只有**默认空值**、无硬编码 key。结论=dsh-asr-voice 远端干净：key 只在本机 `~/.dsh/settings.yaml`（用户主目录，不在仓库目录，`git add` 永远够不着）。**坑**=①「key 在本地配置文件」与「key 在仓库」是两回事，用户提醒的是后者，核查必须以仓库为准；②`git grep` 不带路径时默认扫整个工作树（含已提交内容），是推前密钥核查的最快工具；③schema 源码里的 `apiKey: z.string().default('')` 字段名会命中 grep，不算泄密，要能分辨「字段定义」与「真实值」；④`.gitignore` 不覆盖 `~/.dsh/settings.yaml`（它在仓库外），别误以为需要加 ignore 规则。可复现?是（推前跑 `git grep` 密钥模式 + 列提交文件清单即可复验）。
 - **退役仓 GitHub 远端删除：浅克隆差点造成 76 个 commit 永久丢失（2026-08-31，治理/归档）**：
 问题=用户指示把已退役插件的远端删掉。待删 3 个（`DSH-Transparent-UI-Plugin`、`dsh-wallpaper-engine`、`dsh-skills`；`dsh-computer-use`/`dsh-skin-runtime` 本就是非 git 目录、无远端）。
 原因=删除仓库不可逆，唯一凭据是本地归档；而**归档可能是残缺的却不自知**。
