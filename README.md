@@ -30,7 +30,7 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
-| `dsh-notify` | 0.1.5 | 9 | 20/20 |
+| `dsh-notify` | 0.1.9（发版 tag `v0.1.9`：deep-link 适配 rc.1 token 鉴权——authenticatedUrl 带进程 token + `#session=` fragment，首次点击自动种 cookie） | 15 | 20/20 |
 | `dsh-model-selector` | 0.1.6 | 13 | 20/20 |
 | `dsh-asr-voice` | 0.1.7（发版 tag `v0.1.7`：API key 迁 credentials + 宿主冻结数组脱冻 + 设置卡三步向导） | 36 | 20/20 |
 
