@@ -2,10 +2,7 @@
   "comment": "私有插件清单（不进 README/对外文档）：dsh-plugins 只负责校验自有插件仓库。新增插件在此加一行即自动纳入校验（.github/workflows/validate-plugins.yml）。",
   "plugins": [
     { "id": "dsh-asr-voice", "repo": "bitterSmilezzz/dsh-asr-voice" },
-    { "id": "dsh-email", "repo": "bitterSmilezzz/dsh-email" },
     { "id": "dsh-model-selector", "repo": "bitterSmilezzz/dsh-model-selector" },
-    { "id": "dsh-notify", "repo": "bitterSmilezzz/dsh-notify" },
-    { "id": "dsh-shortcuts", "repo": "bitterSmilezzz/dsh-shortcuts" },
-    { "id": "dsh-retry-settings", "repo": "bitterSmilezzz/dsh-retry-settings" }
+    { "id": "dsh-notify", "repo": "bitterSmilezzz/dsh-notify" }
   ]
 }
