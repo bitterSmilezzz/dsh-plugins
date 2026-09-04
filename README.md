@@ -26,13 +26,13 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 ## 账号下仓库登记
 
-**在用 · 受 `manifest.json` 门禁**（数据截至 2026-08-31，dsh 0.1.2-alpha.2）：
+**在用 · 受 `manifest.json` 门禁**（数据截至 2026-09-04，dsh 0.1.2-rc.1）：
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
 | `dsh-notify` | 0.1.9（发版 tag `v0.1.9`：deep-link 适配 rc.1 token 鉴权——authenticatedUrl 带进程 token + `#session=` fragment，首次点击自动种 cookie） | 15 | 20/20 |
-| `dsh-model-selector` | 0.1.6 | 13 | 20/20 |
-| `dsh-asr-voice` | 0.1.7（发版 tag `v0.1.7`：API key 迁 credentials + 宿主冻结数组脱冻 + 设置卡三步向导） | 36 | 20/20 |
+| `dsh-model-selector` | 0.1.16（发版 tag `v0.1.16`：卸载守卫、passive scroll 节流、分组头 aria） | 52 | 20/20 |
+| `dsh-asr-voice` | 0.2.10（源码精简轮收口：9610→8916 行，重复率 1.23%→0.69%） | 177 | 20/20 |
 
 **已退役 · 本地不再使用**（副本一律在 `doc/archives/`；无 git 历史的用 tar 含 `.git`，有历史的用 bundle）：
 
