@@ -71,9 +71,10 @@ registry:
   targets:
     # No env interpolation in this file, and agent-qa.local.yaml only overrides
     # devices/apps/providers — never registry.targets. So the authenticated URL
-    # (`dsh web` prints it at startup; the bare URL 401s) must either be written
-    # into `url` below, or captured once with
+    # (`dsh web` prints it at startup; the bare URL 401s) must be written into
+    # `url` below (the token stays valid for the server process's lifetime and
+    # re-issues a session cookie on every visit) or captured once with
     # `agent-qa auth-state capture --target dsh-web --name token`.
     dsh-web:
       platform: web
-      url: http://127.0.0.1:3080/
+      url: http://127.0.0.1:3080/?token=gJqsjkPMK54SbM6xllOfuwgKafQ81VP_jmRY6rpAdN4
