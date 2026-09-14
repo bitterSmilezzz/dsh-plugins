@@ -5,11 +5,11 @@
 
 | 文件 | 主题 | 条目数 |
 | --- | --- | --- |
-| [fixes.md](fixes.md) | 修复 / 诊断 | 103 |
-| [research.md](research.md) | 调研 / 分析 / 审计 | 69 |
-| [governance.md](governance.md) | 治理 / 决策 / 记录 | 102 |
-| [install.md](install.md) | 安装 / 部署 | 22 |
-| [architecture.md](architecture.md) | 重构 / 架构 / 合并 | 39 |
-| [performance.md](performance.md) | 性能 / 资源 / 优化 | 51 |
-| [features.md](features.md) | 新增 / 实现 / 增强 | 54 |
+| [fixes.md](fixes.md) | 修复 / 诊断 | 125 |
+| [research.md](research.md) | 调研 / 分析 / 审计 | 75 |
+| [governance.md](governance.md) | 治理 / 决策 / 记录 | 109 |
+| [install.md](install.md) | 安装 / 部署 | 27 |
+| [architecture.md](architecture.md) | 重构 / 架构 / 合并 | 42 |
+| [performance.md](performance.md) | 性能 / 资源 / 优化 | 63 |
+| [features.md](features.md) | 新增 / 实现 / 增强 | 64 |
 | [misc.md](misc.md) | 其他 | 140 |

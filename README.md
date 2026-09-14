@@ -26,20 +26,21 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 ## 账号下仓库登记
 
-**在用 · 受 `manifest.json` 门禁**（数据截至 2026-09-04，dsh 0.1.2-rc.1）：
+**在用 · 受 `manifest.json` 门禁**（数据截至 2026-09-14，dsh 0.1.5-rc.2）：
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
-| `dsh-notify` | 0.1.9（发版 tag `v0.1.9`：deep-link 适配 rc.1 token 鉴权——authenticatedUrl 带进程 token + `#session=` fragment，首次点击自动种 cookie） | 15 | 20/20 |
-| `dsh-model-selector` | 0.1.16（发版 tag `v0.1.16`：卸载守卫、passive scroll 节流、分组头 aria） | 52 | 20/20 |
-| `dsh-asr-voice` | 0.2.10（源码精简轮收口：9610→8916 行，重复率 1.23%→0.69%） | 177 | 20/20 |
+| `@bittersmilezzz/dsh-notify` | 0.1.12（tag `v0.1.12`：包名迁移到自有 scope + **npm 首发** + 客户端平台模块标 optional peer） | 56 | 20/20 |
+| `@bittersmilezzz/dsh-model-selector` | 0.1.18（tag `v0.1.18`：同上；另修契约测试——改断言 `cordis.patch.yml` 的 `name` 等于包名，`id` 保持短原名） | 73 | 20/20 |
+| `@bittersmilezzz/dsh-asr-voice` | 0.3.1（tag `v0.3.1`：同上，统一到自有 scope） | 248 | 20/20 |
+| `@bittersmilezzz/dsh-computer-use` | 0.4.1（tag `v0.4.1`：桌面端 optional peer + `publishConfig`；helper 随版本重建 sha256 `7c93a0c6…`；**自有 git 仓库 `bitterSmilezzz/dsh-computer-use`，非 fork**，见下方退役表备注） | 168 passed / 15 skipped / 2 为环境门禁 | 未纳入 manifest |
 
 **已退役 · 本地不再使用**（副本一律在 `doc/archives/`；无 git 历史的用 tar 含 `.git`，有历史的用 bundle）：
 
 | 仓库 | 退役原因 | 归档 |
 | --- | --- | --- |
 | `dsh-ui-tweaks` | 拆分前的合并包，已被上面 4 个插件取代；本地与远端均已删除 | `dsh-ui-tweaks-2026-08-30.bundle`（48 commits + tag，实测可 clone 恢复） |
-| `dsh-computer-use` | 非 git 仓库（无历史、不可固定源分发）；8 个宿主工具超 Pi 契约 | `dsh-computer-use-2026-08-31.tar.gz`（194 文件；⚠ 08-30 版整棵 `native/` 漏档，丢了 13 个手写 Swift 源，已废弃） |
+| ~~`dsh-computer-use`~~ | ~~非 git 仓库（无历史、不可固定源分发）；8 个宿主工具超 Pi 契约~~ **已于 2026-09-10 复活为自有 git 仓库**（脱离上游 fork，包名 `@bittersmilezzz/dsh-computer-use`，`0.4.1` 于 2026-09-14 发布，见上表） | `dsh-computer-use-2026-08-31.tar.gz`（旧非 git 版归档，仅历史留档） |
 | `dsh-skin-runtime` | 非 git 仓库；效果引擎与 Aqua 重复 2048 行 | `dsh-skin-runtime-2026-08-30.tar.gz` |
 | `dsh-skills` | 纯技能包（非 bundle 插件，不可上架）；内容已迁至 OpenViking 技能空间 | `dsh-skills-2026-08-30.tar.gz` |
 | `dsh-wallpaper-engine` | 仅 Windows；注入的 3 个官方包在 alpha.2 已消失，且 host 半区无源码不可重建 | `dsh-wallpaper-engine-2026-08-30.tar.gz` |
