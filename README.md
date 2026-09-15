@@ -30,16 +30,16 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
-| `@bittersmilezzz/dsh-notify` | 0.1.12（tag `v0.1.12`：包名迁移到自有 scope + **npm 首发** + 客户端平台模块标 optional peer） | 56 | 20/20 |
-| `@bittersmilezzz/dsh-model-selector` | 0.1.18（tag `v0.1.18`：同上；另修契约测试——改断言 `cordis.patch.yml` 的 `name` 等于包名，`id` 保持短原名） | 73 | 20/20 |
-| `@bittersmilezzz/dsh-asr-voice` | 0.3.1（tag `v0.3.1`：同上，统一到自有 scope） | 248 | 20/20 |
-| `@bittersmilezzz/dsh-computer-use` | 0.4.1（tag `v0.4.1`：桌面端 optional peer + `publishConfig`；helper 随版本重建 sha256 `7c93a0c6…`；**自有 git 仓库 `bitterSmilezzz/dsh-computer-use`，非 fork**，见下方退役表备注） | 168 passed / 15 skipped / 2 为环境门禁 | 未纳入 manifest |
+| `@bittersmilezzz/dsh-notify` | 0.1.13（tag `v0.1.13`：依赖对齐 DSH `0.1.6-alpha.1`） | 56 | 20/20 |
+| `@bittersmilezzz/dsh-model-selector` | 0.1.19（tag `v0.1.19`：同上） | 73 | 20/20 |
+| `@bittersmilezzz/dsh-asr-voice` | 0.3.2（tag `v0.3.2`：同上） | 248 | 20/20 |
 
 **已退役 · 本地不再使用**（副本一律在 `doc/archives/`；无 git 历史的用 tar 含 `.git`，有历史的用 bundle）：
 
 | 仓库 | 退役原因 | 归档 |
 | --- | --- | --- |
 | `dsh-ui-tweaks` | 拆分前的合并包，已被上面 4 个插件取代；本地与远端均已删除 | `dsh-ui-tweaks-2026-08-30.bundle`（48 commits + tag，实测可 clone 恢复） |
+| `dsh-computer-use`（自有版 `@bittersmilezzz/dsh-computer-use`） | **2026-09-15 退役**：官方 `@deepseek-ai/dsh-computer-use` + `dsh-experimental-computer-use-cua-driver-native` 已发布并**实测可用**（headless 下真实调用 `cua_driver_native__check_permissions` 通过，驱动 55 个工具）；自研版与官方同名 `ctx.computerUse` 服务互斥，web profile 已切换到官方方案；远端已归档（archived）、本地已删除 | `dsh-computer-use-2026-09-15.bundle`（完整历史 + tag，`git bundle verify` 通过，3.5M） |
 | ~~`dsh-computer-use`~~ | ~~非 git 仓库（无历史、不可固定源分发）；8 个宿主工具超 Pi 契约~~ **已于 2026-09-10 复活为自有 git 仓库**（脱离上游 fork，包名 `@bittersmilezzz/dsh-computer-use`，`0.4.1` 于 2026-09-14 发布，见上表） | `dsh-computer-use-2026-08-31.tar.gz`（旧非 git 版归档，仅历史留档） |
 | `dsh-skin-runtime` | 非 git 仓库；效果引擎与 Aqua 重复 2048 行 | `dsh-skin-runtime-2026-08-30.tar.gz` |
 | `dsh-skills` | 纯技能包（非 bundle 插件，不可上架）；内容已迁至 OpenViking 技能空间 | `dsh-skills-2026-08-30.tar.gz` |
