@@ -26,13 +26,13 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 ## 账号下仓库登记
 
-**在用 · 受 `manifest.json` 门禁**（数据截至 2026-09-14，dsh 0.1.5-rc.2）：
+**在用 · 受 `manifest.json` 门禁**（数据截至 2026-09-16，dsh 0.1.6-alpha.1）：
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
-| `@bittersmilezzz/dsh-notify` | 0.1.13（tag `v0.1.13`：依赖对齐 DSH `0.1.6-alpha.1`） | 56 | 20/20 |
-| `@bittersmilezzz/dsh-model-selector` | 0.1.19（tag `v0.1.19`：同上） | 73 | 20/20 |
-| `@bittersmilezzz/dsh-asr-voice` | 0.3.2（tag `v0.3.2`：同上） | 248 | 20/20 |
+| `@bittersmilezzz/dsh-notify` | 0.1.14（tag `v0.1.14`：设置卡片残留自绘开关对齐官方 `Switch`；依赖线 `^0.1.6-alpha.1`） | 58 | 20/20 |
+| `@bittersmilezzz/dsh-model-selector` | 0.1.20（tag `v0.1.20`：记录「官方原语不采纳」判据 + 座位契约回归钉子；**无运行时行为变更**） | 74 | 20/20 |
+| `@bittersmilezzz/dsh-asr-voice` | 0.3.2（tag `v0.3.2`：依赖对齐 DSH `0.1.6-alpha.1`，本轮零改动） | 248 | 20/20 |
 
 **已退役 · 本地不再使用**（副本一律在 `doc/archives/`；无 git 历史的用 tar 含 `.git`，有历史的用 bundle）：
 
