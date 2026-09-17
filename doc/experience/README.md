@@ -5,9 +5,9 @@
 
 | 文件 | 主题 | 条目数 |
 | --- | --- | --- |
-| [fixes.md](fixes.md) | 修复 / 诊断 | 128 |
+| [fixes.md](fixes.md) | 修复 / 诊断 | 129 |
 | [research.md](research.md) | 调研 / 分析 / 审计 | 75 |
-| [governance.md](governance.md) | 治理 / 决策 / 记录 | 109 |
+| [governance.md](governance.md) | 治理 / 决策 / 记录 | 110 |
 | [install.md](install.md) | 安装 / 部署 | 27 |
 | [architecture.md](architecture.md) | 重构 / 架构 / 合并 | 44 |
 | [performance.md](performance.md) | 性能 / 资源 / 优化 | 63 |

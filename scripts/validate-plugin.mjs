@@ -8,14 +8,16 @@
  * 检查项（对应 AGENTS.md 契约，可静态化的部分）：
  *   [manifest]  package.json 存在、合法、name/version/license 齐全
  *   [patch]     dsh.bundle.patch 声明存在，cordis.patch.yml 可解析
- *   [entry]     补丁插入的 entry id 唯一；未禁用/遮蔽官方组件
+ *   [entry]     补丁插入的 entry id 唯一；未禁用/遮蔽官方组件（含 insert/update 块内的
+ *               `disabled: true` —— 缩进嵌套的官方 entry 一样算）
  *   [namespace] 包名不以 @deepseek-ai/ 开头
  *   [scripts]   preinstall/install/postinstall/prepare 显式列出（无则通过，报告）
+ *   [registry]  scripts 含 validate:registry（DSH-Store「可验证」条款）
  *   [client]    声明 dsh.client 时 lib/client.js 必须存在且非空（缺失会让整个 profile 装配失败）
- *   [permission] README/manifest 含权限等级披露（low/medium/high/unknown）
- *   [readme]    README 存在且包含安装与权限说明；写明外部依赖与已知风险
+ *   [permission] README/manifest 含权限等级披露等级词（low/medium/high/unknown）
+ *   [readme]    README 存在、含安装与权限说明、名称用「中文名（English Name）」；写明外部依赖与已知风险
  *   [fixed]     git 仓库存在，HEAD 为 40 位 commit（固定源）
- *   [tag]       version 与最新 git tag 一致（manifest 一致）
+ *   [tag]       version 与最新 git tag 一致（manifest 一致；不一致 = FAIL，CI 只对 FAIL 开 Issue）
  *   [inject]    host 入口声明 inject（若存在 src/index.ts 或 lib/index.js）
  *   [tools]     工具注册数 ≤3（Pi 契约：Context 是最贵资源）；>5 需评审，>10 必须拆分
  *   [dshstd]    依赖 @dsh-std/* 时须有 docs/proposals/ 提案目录
@@ -72,6 +74,23 @@ if (pkg) {
   const life = ['preinstall', 'install', 'postinstall', 'prepare'].filter((k) => pkg.scripts?.[k])
   check('scripts', '生命周期脚本显式列出', true,
     life.length ? `存在: ${life.join(', ')}` : '无生命周期脚本')
+
+  // ---------- 可验证（DSH-Store 准入契约：npm run validate:registry 通过） ----------
+  // 该条款只对**声明了商城分发意图**的仓库生效：未上架的仓库不适用（见
+  // doc/experience/governance.md「validate:registry 属商城侧工具，未上架不适用」）。
+  // 判据 = README 提到 DSH-Store / 商城 / 上架。误伤成本不对称：伞仓库 CI 只在
+  // FAIL 时开 Issue，把未上架仓库一律判红会持续制造噪音，而 WARN 仍留痕。
+  const hasRegistryScript = typeof pkg.scripts?.['validate:registry'] === 'string' && pkg.scripts['validate:registry'].length > 0
+  const registryIntent = /dsh-store|商城|上架/i.test(readText('README.md'))
+  if (hasRegistryScript) {
+    check('scripts.registry', 'scripts 含 validate:registry（DSH-Store：可验证）', true, pkg.scripts['validate:registry'])
+  } else if (registryIntent) {
+    check('scripts.registry', 'scripts 含 validate:registry（DSH-Store：可验证）', false,
+      'README 声明了商城分发意图，但 package.json scripts 缺 validate:registry')
+  } else {
+    warn('scripts.registry', 'scripts 缺 validate:registry（未声明商城分发意图，暂不阻断）',
+      'README 未提 DSH-Store/商城/上架；决定上架前须补该脚本')
+  }
 }
 
 // ---------- patch（DSH-Store 准入契约：manifest 一致 / 入口唯一 / 不动官方组件） ----------
@@ -84,25 +103,118 @@ if (patchRel) {
   check('patch.parseable', 'cordis.patch.yml 存在', patchText.length > 0, patchRel)
 }
 
-// 补丁里的 entry id 收集（insert 块与顶层 id 行）。
-// 先剔除 YAML 注释行——注释里的示例 `- id: xxx` 不是真实条目，否则会被误判为重复。
+// 已知官方 entry id 名单（快照来源：官方 bundle dsh-base / dsh-web-app / dsh-headless /
+// dsh-acp-app / dsh-sdk-app / dsh-sdk-minimal 的 cordis.patch.yml）。契约版本无关，名单只用于
+// 「这个 id 属于官方吗」的判定：命中即判官方，未命中且不带官方前缀会**漏报（假阴性）**，不会误报。
+// 重新生成：grep -rhoE '^\s*-\s*id:\s*[A-Za-z0-9_.@/-]+' \
+//   ~/.dsh/profiles/node_modules/@deepseek-ai/*/cordis.patch.yml | sed 's/.*id: *//' | sort -u
+const OFFICIAL_ENTRY_IDS = new Set(`acp acp-app-startup agent agent-default-model agent-instructions agent-invariant agent-loop
+  agent-loop-invariant agent-presets api-remotes approval attachment-local bash-sandbox
+  client-hmr command-compact command-feedback command-goal commands compaction-basic connection
+  cordis-client-runner cordis-host-runner credentials deepseek-llm-api-extensions
+  directory-picker file-reference-local file-upload fs-observation-policy fs-sandbox goal
+  goal-round-driver headless-runner headless-startup hmr image-offload invariants jobs llm
+  llm-deepseek llm-pi-ai llm-retry locale mcp-resources message-feedback modules office-to-pdf
+  open-in-app permission persistent-bash persistent-pwsh plan-mode plugin-inventory
+  plugin-manager plugin-package-inventory-deepseek ptc-runtime pty pwsh-sandbox
+  repeat-tool-reminder resources sandbox sandbox-policy scope-invariant sdk-app-startup
+  sdk-jsonrpc-server session session-checkpoint-policy session-controller session-invariant
+  session-log-deepseek session-log-download session-persistence-jsonl session-projection
+  session-projection-cache session-query-sqlite session-reference session-stats
+  session-telemetry-otel session-title session-title-llm session-turn-outline sessions settings
+  settings-controller shell-env skill skill-badge skill-filesystem spill-local spill-policy
+  storage storage-domain storage-json subagent subagent-fork-in-process
+  subagent-model-selection-settings subagent-spawn-in-process subprocess system-prompt
+  terminal-bash terminal-controller terminal-pwsh timeout-policy timer token-meter tool-bash
+  tool-fs tool-fs-search tool-goal tool-jobs tool-plugin-manager tool-pwsh tool-ralph
+  tool-result-pruner tool-skill tool-subagent tool-subagent-control tool-subagent-fork
+  tool-subagent-list-agents tool-todo tool-web tool-workflow tools typert typert-gateway
+  typert-loader ui-agent-preset ui-approval ui-attachment ui-brand-official ui-chat ui-commands
+  ui-conversation ui-cordis ui-deliverables ui-goal ui-input-trigger ui-jobs ui-layout
+  ui-message-feedback ui-model-selection ui-open-in-app ui-permission ui-plan ui-plugin-manager
+  ui-reference ui-renderer ui-schedule ui-session ui-settings ui-settings-general
+  ui-settings-models ui-settings-plugin-inventory ui-settings-plugins
+  ui-settings-unarchive-sessions ui-sidebar ui-sidebar-browser ui-sidebar-documentpreview
+  ui-sidebar-files ui-sidebar-right ui-sidebar-terminal ui-skill ui-subagent ui-theme ui-tool
+  ui-trajectory ui-user-questions ui-workflow-run ui-workspace user-questions web web-fetch-http
+  web-runtime web-search-deepseek web-startup webserver workflow-ptc workspace workspace-changes
+  workspace-controller workspace-files`.split(/\s+/).filter(Boolean))
+// 官方 id 的形态前缀（名单之外的新官方 id 兜底）。注意**不含 `dsh-`**：本伞下自有 entry id
+// 形如 dsh-model-selector / dsh-notify，用 `dsh-` 前缀会把自己的插件误判成官方。
+const OFFICIAL_ENTRY_PREFIX = /^(ui-|settings\.|conversation\.|agent)/i
+
+// 补丁里的 entry 收集：顶层、insert 块、update 块内的 `- id:` 一律纳入（缩进的官方 entry
+// 一样要能被定位，否则「不动官方组件」检查会假通过）。
+// 先剔除 YAML 注释行——注释里的示例 `- id: xxx` / `disabled: true` 不是真实条目。
 const patchCode = patchText
   .split('\n')
   .filter((line) => !/^\s*#/.test(line))
   .join('\n')
-const insertIds = [...patchCode.matchAll(/-\s*id:\s*([\w-]+)/g)].map((m) => m[1])
-// 顶层（无缩进）"- id:" 行 = 补丁级条目；insert 块内的 id 有缩进，不算。
-const topLevelIds = [...patchCode.matchAll(/^- id:\s*([\w-]+)\s*$/gm)].map((m) => m[1])
-const dup = insertIds.filter((id, i) => insertIds.indexOf(id) !== i)
-check('entry.unique', '补丁插入的 entry id 唯一', dup.length === 0, dup.length ? `重复: ${[...new Set(dup)].join(', ')}` : `${insertIds.length} 个 entry`)
 
-// 官方组件保护：顶层被禁用的官方 entry / 遮蔽 @deepseek-ai 组件
-const officialPrefix = /^(ui-|dsh-|settings\.|conversation\.|agent)/i
-const disabledOfficial = topLevelIds.filter((id) => officialPrefix.test(id))
-const shadowsOfficial = insertIds.some((id) => id.includes('ui-settings') || id.includes('ui-plugin'))
-const protectedOk = disabledOfficial.length === 0 && !shadowsOfficial
-check('entry.protected', '未禁用/遮蔽官方组件', protectedOk,
-  disabledOfficial.length ? `禁用官方 entry: ${disabledOfficial.join(', ')}` : (topLevelIds.length ? `补丁含 ${topLevelIds.length} 个顶层条目` : '未动官方组件'))
+// 逐行解析成条目：`- id: xxx` 起一条，其后的 name/disabled 等键归入该条目；
+// `disabled: true` 回溯到最近一条 `- id:` 行取条目 id（YAML 里 disabled 与 id 同属一个条目）。
+const entries = []
+let block = null            // 当前所在的 insert/update 块
+let orphanDisabled = 0      // 找不到所属 `- id:` 的 disabled: true
+for (const line of patchCode.split('\n')) {
+  const blockM = /^(\s*)-\s*(insert|update):\s*$/.exec(line)
+  if (blockM) { block = { kind: blockM[2], indent: blockM[1].length }; continue }
+  const idM = /^(\s*)-\s*id:\s*([\w.@/-]+)/.exec(line)
+  if (idM) {
+    if (block && idM[1].length <= block.indent) block = null
+    entries.push({ id: idM[2], indent: idM[1].length, block: block?.kind ?? null, disabled: false, names: [] })
+    continue
+  }
+  const cur = entries[entries.length - 1]
+  const isDisabled = /^\s*disabled:\s*['"]?true['"]?\s*(#.*)?$/i.test(line)
+  if (!cur) { if (isDisabled) orphanDisabled += 1; continue }
+  const nameM = /^\s*name:\s*['"]?([^'"\s,]+)/.exec(line)
+  if (nameM) cur.names.push(nameM[1])
+  if (isDisabled) cur.disabled = true
+}
+
+const allIds = entries.map((e) => e.id)
+const topLevelIds = entries.filter((e) => e.indent === 0).map((e) => e.id)
+const dup = allIds.filter((id, i) => allIds.indexOf(id) !== i)
+check('entry.unique', '补丁插入的 entry id 唯一', dup.length === 0, dup.length ? `重复: ${[...new Set(dup)].join(', ')}` : `${allIds.length} 个 entry`)
+
+// 官方组件保护：任何层级（含 insert/update 块内）被 `disabled: true` 的官方 entry，或 insert
+// 官方 id（遮蔽/替换）都判 FAIL —— DSH-Store 拒绝的高频原因。
+// 官方判定：①条目 name 指向 @deepseek-ai/*；②id 命中官方名单；③id 命中官方前缀。
+// 先排除本插件自有条目（package.json name 及其短名），避免把自有 id 误判成官方。
+const pkgName = typeof pkg?.name === 'string' ? pkg.name : ''
+const ownIds = new Set([pkgName, pkgName.split('/').pop()].filter(Boolean))
+const isSelfEntry = (e) => ownIds.has(e.id) || (pkgName !== '' && e.names.includes(pkgName))
+const isOfficialEntry = (e) => !isSelfEntry(e) && (
+  e.names.some((n) => n.startsWith('@deepseek-ai/')) ||
+  OFFICIAL_ENTRY_IDS.has(e.id) ||
+  OFFICIAL_ENTRY_PREFIX.test(e.id)
+)
+const disabledOfficial = [
+  ...entries.filter((e) => e.disabled && isOfficialEntry(e)).map((e) => e.id),
+  // 行内（flow style）`- { id: xxx, disabled: true }` 写成单行时逐行解析看不到 id，单独扫一遍，
+  // 免得这一形态成为绕过口子（`disabled` 写在 `id` 之前的行内写法仍会漏，属已知假阴性）。
+  ...[...patchCode.matchAll(/\{[^{}]*\bid:\s*([\w.@/-]+)[^{}]*\bdisabled:\s*['"]?true['"]?[^{}]*\}/gi)]
+    .filter((m) => !ownIds.has(m[1]) && (m[0].includes('@deepseek-ai/') || OFFICIAL_ENTRY_IDS.has(m[1]) || OFFICIAL_ENTRY_PREFIX.test(m[1])))
+    .map((m) => m[1]),
+]
+const shadowsOfficial = entries.filter((e) => e.block === 'insert' && isOfficialEntry(e))
+const protectedOk = disabledOfficial.length === 0 && shadowsOfficial.length === 0
+const protectedDetail = protectedOk
+  ? (allIds.length ? `补丁含 ${allIds.length} 个 entry（${topLevelIds.length} 个顶层），未禁用/遮蔽官方组件` : '未动官方组件')
+  : [
+    disabledOfficial.length ? `禁用官方 entry: ${disabledOfficial.join(', ')}` : '',
+    shadowsOfficial.length ? `insert 官方 id（遮蔽/替换）: ${shadowsOfficial.map((e) => e.id).join(', ')}` : '',
+  ].filter(Boolean).join('；')
+check('entry.protected', '未禁用/遮蔽官方组件', protectedOk, protectedDetail)
+
+// 归不到官方也归不到自有（如他人 entry）的 disabled: true：静态判不了归属，至少留痕，
+// 不静默通过（这类行曾经整片漏检）。
+const disabledForeign = entries.filter((e) => e.disabled && !isOfficialEntry(e) && !isSelfEntry(e)).map((e) => e.id)
+if (disabledForeign.length || orphanDisabled) {
+  warn('entry.protected.unknown', '存在无法静态判定归属的 disabled: true（人工确认未禁用官方 entry）',
+    [...disabledForeign, ...(orphanDisabled ? [`${orphanDisabled} 处无所属 id`] : [])].join(', '))
+}
 
 // ---------- client 半区一致性（声明 dsh.client 就必须有可加载产物） ----------
 // DSH 的 client-modules 在装配阶段就要求声明过的 client bundle 真实存在，
@@ -123,11 +235,27 @@ if (declaredClient) {
 const readme = readText('README.md')
 check('readme.exists', 'README 存在', readme.length > 200)
 check('readme.install', 'README 含安装/启用说明', /安装|install/i.test(readme))
-const disclosed = /low|medium|high|unknown|权限|permissions?|access/i.test(readme)
+
+// 名称格式（AGENTS.md：名称用「中文名（English Name）」）：首个 H1 或 H1 后的首段命中即可。
+const readmeNameRe = /[\u4e00-\u9fa5]+[（(][A-Za-z][\w .\-]*[）)]/
+const h1M = /^#\s+(.+)$/m.exec(readme)
+const h1Text = h1M ? h1M[1] : ''
+const bodyAfterH1 = h1M ? readme.slice(h1M.index + h1M[0].length) : readme
+const firstPara = bodyAfterH1
+  .split(/\n\s*\n/)
+  .map((s) => s.trim())
+  .find((s) => s && !/^[<!#|>`]/.test(s) && !/^[-*]\s/.test(s) && !/^!\[/.test(s)) ?? ''
+const nameOk = readmeNameRe.test(h1Text) || readmeNameRe.test(firstPara)
+check('readme.name', 'README 名称用「中文名（English Name）」', nameOk,
+  nameOk ? (readmeNameRe.test(h1Text) ? `H1: ${h1Text.trim()}` : `首段: ${(readmeNameRe.exec(firstPara) ?? [''])[0]}`)
+    : `H1/首段未命中「中文名（English Name）」：${(h1Text || firstPara).slice(0, 60) || 'README 缺失'}`)
+
+// 权限等级披露：必须出现等级词（low/medium/high/unknown），仅出现「权限」二字不算披露。
+const disclosed = /\b(low|medium|high|unknown)\b/i.test(readme)
 if (disclosed) {
   check('readme.permission', 'README 含权限等级披露（low/medium/high/unknown）', true)
 } else {
-  warn('readme.permission', 'README 含权限等级披露（low/medium/high/unknown）', 'README 未披露权限等级，建议补充')
+  warn('readme.permission', 'README 含权限等级披露（low/medium/high/unknown）', 'README 未披露权限等级词（low/medium/high/unknown），建议补充')
 }
 
 // ---------- fixed source（DSH-Store 准入契约：固定源发布） ----------
@@ -198,7 +326,15 @@ try {
   }
 } catch { /* 非 git 仓库 */ }
 if (pkg?.version && !versionMatches) {
-  warn('manifest.tag', 'version 与最新 git tag 一致（DSH-Store：manifest 一致）', `${tagInfo} ≠ manifest ${pkg.version}，发布前打 tag 对齐`)
+  // 保持 WARN：这条检查**无法区分**两种情形 ——
+  //   (a) 发版漏打 tag（真漂移，应当阻断）；
+  //   (b) 版本号已 bump、尚未发版的开发中状态（正常，asr-voice 0.3.3 vs tag v0.3.2
+  //       即此例：npm 上仍是 0.3.2，工作区是下一个版本）。
+  // 静态脚本查不到 npm 的已发布版本（离线、且不应联网），一律 FAIL 会让「开发中」
+  // 的仓库持续被 CI 开 Issue（伞仓库 CI 只对 FAIL 开 Issue）。要升 FAIL 必须先能
+  // 判定 (a)/(b)，例如比对 `npm view <name>@<version>` 的命中结果。
+  warn('manifest.tag', 'version 与最新 git tag 一致（DSH-Store：manifest 一致）',
+    `${tagInfo} ≠ manifest ${pkg.version}，发布前打 tag 对齐`)
 } else {
   check('manifest.tag', 'version 与最新 git tag 一致（DSH-Store：manifest 一致）', true, tagInfo)
 }
