@@ -55,6 +55,21 @@ agent-qa 的 config 没有 env 插值，`agent-qa.local.yaml` 也只覆盖 devic
 所以带 token 的 URL 必须写进 `registry.targets.dsh-web.url`（或先访问一次，用
 `agent-qa auth-state capture --target dsh-web --name token` 存 cookie）。
 
+⚠️ **token 只写进 gitignored 的 `agent-qa.local.yaml`，绝不提交到 `agent-qa.config.yaml`**。
+这个仓库是公开的，历史上曾把 token 硬编码进主配置并推送（`f565ed2`），gitleaks 会命中，
+任何人都能从公开历史里翻出来。即使它按设计只在服务进程生命周期内有效，也不该进 git。
+
+现在主配置 `agent-qa.config.yaml` 里的 `url` 是裸地址（401），跑之前把本次的
+`?token=...` 补到 `agent-qa.local.yaml` 的同一 target 下：
+
+```yaml
+# qa/dsh-model-selector/agent-qa.local.yaml  (gitignored)
+registry:
+  targets:
+    dsh-web:
+      url: http://127.0.0.1:3080/?token=<dsh web 本次打印的 token>
+```
+
 注意：跑用例会真的点选模型，**会改掉该 profile 当前会话的模型选择**。
 
 ## 跑
