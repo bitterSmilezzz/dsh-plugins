@@ -26,12 +26,12 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 ## 账号下仓库登记
 
-**在用 · 受 `manifest.json` 门禁**（各行数据为该插件最近一次登记时点：dsh-notify 2026-09-16 / dsh-model-selector 2026-10-17；门禁项数随校验脚本增长，旧行未回填）：
+**在用 · 受 `manifest.json` 门禁**（各行数据为该插件最近一次登记时点：dsh-notify 2026-09-16 / dsh-model-selector 2026-10-18；门禁项数随校验脚本增长，旧行未回填）：
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
 | `@bittersmilezzz/dsh-notify` | 0.1.14（tag `v0.1.14`：设置卡片残留自绘开关对齐官方 `Switch`；依赖线 `^0.1.6-alpha.1`） | 58 | 20/20 |
-| `@bittersmilezzz/dsh-model-selector` | 0.3.9（tag `v0.3.9`：适配 DSH 0.2.1-rc.2；菜单摆位改用官方 `useAnchoredPosition`（`align: 'end'`）；`conversation.input.model.label` 子座位实测不可采纳，已回滚为已知限制并加反向契约测试） | 121 | 22/22 |
+| `@bittersmilezzz/dsh-model-selector` | 0.4.0（tag `v0.4.0`：Codex 式思考等级条——pill 轨道、5 点、蓝色填充、24px 白色滑块、最高档蓝紫渐变 + 漂移粒子；拖拽磁吸；菜单 portal 到 body、交互期间冻结菜单盒、状态条浮层化、loading 延迟 250ms；适 DSH 0.2.1-rc.2） | 121 | 22/22 |
 
 **已退役 · 本地不再使用**（归档按 `doc/archives/` 命名；无 git 历史的用 tar 打包工作树，有历史的用 bundle。⚠ 2026-10-17 之前的归档文件已丢失，表中文件名仅作历史记录）：
 
@@ -72,8 +72,9 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 > 本地仓库已删除；同批归档两个本地私有插件 `dsh-antigravity-tool` / `dsh-codex-bypass`（非 git 仓库、
 > 无远端、未发布 npm）并删除本地目录。web profile 中三者的 `dependencies`、`dsh.profile.bundles`、
 > `pnpm-lock.yaml` 与 `node_modules` 链接均已清除，其余插件不受影响。
-> **npm 已收口（2026-10-17 20:29）**：`@bittersmilezzz/dsh-asr-voice` 已执行 `npm deprecate`
-> （registry `deprecated` 字段已生效）；`@bittersmilezzz/dsh-model-selector@0.3.9` 已发布并成为 `latest`。
+> **npm 已收口（2026-10-18 00:56）**：`@bittersmilezzz/dsh-asr-voice` 已执行 `npm deprecate`
+> （registry `deprecated` 字段已生效）；`@bittersmilezzz/dsh-model-selector@0.4.0` 已发布并成为 `latest`
+> （shasum `359d6ad0…`；首次 publish 触发 2FA web auth 后 registry 短暂显示 0.3.9，约 2 分钟后生效）。
 > 过程记录：首次 publish 因 token 失效报 E401/E404，`npm login` 后走 2FA web auth 才成功（registry 处理延迟约 2 分钟）。
 > **`doc/archives/` 更正**：该目录此前已丢失（历史归档未找回，2026-08-31 叙述中的「唯一副本」已不成立），
 > 2026-10-17 重建；当前含 `dsh-asr-voice-2026-10-17.bundle`、`dsh-asr-voice-2026-10-17.tar.gz`、
