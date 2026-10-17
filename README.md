@@ -26,18 +26,20 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 ## 账号下仓库登记
 
-**在用 · 受 `manifest.json` 门禁**（数据截至 2026-09-16，dsh 0.1.6-alpha.1）：
+**在用 · 受 `manifest.json` 门禁**（各行数据为该插件最近一次登记时点：dsh-notify 2026-09-16 / dsh-model-selector 2026-10-17；门禁项数随校验脚本增长，旧行未回填）：
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
 | `@bittersmilezzz/dsh-notify` | 0.1.14（tag `v0.1.14`：设置卡片残留自绘开关对齐官方 `Switch`；依赖线 `^0.1.6-alpha.1`） | 58 | 20/20 |
-| `@bittersmilezzz/dsh-model-selector` | 0.1.21（tag `v0.1.21`：官方原语不采纳判据 + 座位契约钉子 + **官方座位遮蔽的依赖侧守卫测试**；**无运行时行为变更**） | 75 | 20/20 |
-| `@bittersmilezzz/dsh-asr-voice` | 0.3.2（tag `v0.3.2`：依赖对齐 DSH `0.1.6-alpha.1`，本轮零改动） | 248 | 20/20 |
+| `@bittersmilezzz/dsh-model-selector` | 0.3.9（tag `v0.3.9`：适配 DSH 0.2.1-rc.2；菜单摆位改用官方 `useAnchoredPosition`（`align: 'end'`）；`conversation.input.model.label` 子座位实测不可采纳，已回滚为已知限制并加反向契约测试） | 121 | 22/22 |
 
-**已退役 · 本地不再使用**（副本一律在 `doc/archives/`；无 git 历史的用 tar 含 `.git`，有历史的用 bundle）：
+**已退役 · 本地不再使用**（归档按 `doc/archives/` 命名；无 git 历史的用 tar 打包工作树，有历史的用 bundle。⚠ 2026-10-17 之前的归档文件已丢失，表中文件名仅作历史记录）：
 
 | 仓库 | 退役原因 | 归档 |
 | --- | --- | --- |
+| `dsh-asr-voice`（`@bittersmilezzz/dsh-asr-voice`） | **2026-10-17 退役**：用户决定完整退役（最终版 0.4.7 / tag `v0.4.7`，153 commits、37 tags；GitHub 远端已归档 archived、本地已删除、web profile 已解绑） | `dsh-asr-voice-2026-10-17.bundle`（完整历史 + 37 tags + `main`/`dev`，3.0M，实测 clone-back 153 commits 通过）+ `dsh-asr-voice-2026-10-17.tar.gz`（工作树含 `.git`，6.3M，解包 `diff -r` 0 差异） |
+| `dsh-antigravity-tool`（`@local/dsh-antigravity-tool`） | **2026-10-17 退役**：用户决定归档（本地私有插件，非 git 仓库、无 GitHub 远端、未发布 npm；web profile 已解绑、本地目录已删除） | `dsh-antigravity-tool-2026-10-17.tar.gz`（工作树 4 文件，8.3K，解包 `diff -r` 0 差异） |
+| `dsh-codex-bypass`（`@local/dsh-codex-bypass`） | **2026-10-17 退役**：用户决定归档（本地私有插件，非 git 仓库、无 GitHub 远端、未发布 npm；web profile 已解绑、本地目录已删除） | `dsh-codex-bypass-2026-10-17.tar.gz`（工作树 2 文件，1.2K，解包 `diff -r` 0 差异） |
 | `dsh-ui-tweaks` | 拆分前的合并包，已被上面 4 个插件取代；本地与远端均已删除 | `dsh-ui-tweaks-2026-08-30.bundle`（48 commits + tag，实测可 clone 恢复） |
 | `dsh-computer-use`（自有版 `@bittersmilezzz/dsh-computer-use`） | **2026-09-15 退役**：官方 `@deepseek-ai/dsh-computer-use` + `dsh-experimental-computer-use-cua-driver-native` 已发布并**实测可用**（headless 下真实调用 `cua_driver_native__check_permissions` 通过，驱动 55 个工具）；自研版与官方同名 `ctx.computerUse` 服务互斥，web profile 已切换到官方方案；远端已归档（archived）、本地已删除 | `dsh-computer-use-2026-09-15.bundle`（完整历史 + tag，`git bundle verify` 通过，3.5M） |
 | ~~`dsh-computer-use`~~ | ~~非 git 仓库（无历史、不可固定源分发）；8 个宿主工具超 Pi 契约~~ **已于 2026-09-10 复活为自有 git 仓库**（脱离上游 fork，包名 `@bittersmilezzz/dsh-computer-use`，`0.4.1` 于 2026-09-14 发布，见上表） | `dsh-computer-use-2026-08-31.tar.gz`（旧非 git 版归档，仅历史留档） |
@@ -47,10 +49,11 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 | `DSH-Transparent-UI-Plugin`（Aqua） | 与官方 `dsh-client-ui-theme` 正面重叠；包名违反 `@deepseek-ai/*` 命名空间契约；`tsdown.config.ts` 指向不存在的路径故不可重建 | `DSH-Transparent-UI-Plugin-2026-08-30.tar.gz` |
 
 > **2026-08-31 收口**：上述退役仓的 **GitHub 远端已按指示全部删除**（`DSH-Transparent-UI-Plugin`、
-> `dsh-wallpaper-engine`、`dsh-skills`，加上此前双删的 `dsh-ui-tweaks`），账号现只剩伞仓库 +
-> 6 个在用插件。`dsh-computer-use` / `dsh-skin-runtime` 本就是非 git 目录、从未有远端。
+> `dsh-wallpaper-engine`、`dsh-skills`，加上此前双删的 `dsh-ui-tweaks`），账号当时只剩伞仓库 +
+> 6 个在用插件（2026-10-17 `dsh-asr-voice` 归档后，受 `manifest.json` 门禁的在用插件为 2 个）。
+> `dsh-computer-use` / `dsh-skin-runtime` 本就是非 git 目录、从未有远端。
 > 退役仓的本地副本已于 2026-08-31 清空（`~/dsh-quarantine-20260830/` 701M 已删），
-> **`doc/archives/` 现在是唯一副本**。归档为双形态：`.tar.gz`（工作树，排除可再生产物）
+> **`doc/archives/` 当时是唯一副本**（该目录此后丢失，见下方 2026-10-17 更正）。归档为双形态：`.tar.gz`（工作树，排除可再生产物）
 > + `.bundle`（单文件全历史）。删除前的核验口径：tar 用「解包 + `diff -r`」比对到 0 行差异，
 > bundle 必须在临时 git 仓内 `git bundle verify`（在非 git 目录跑会假报 `need a repository`），
 > 并对最大的一份做真实 clone-back 计数比对。
@@ -64,6 +67,18 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 > ② 把 `refs/remotes/origin/*` 转成**本地分支**（clone 不会把源仓的 remote-tracking ref 再导出，
 > 否则 bundle 回 clone 只剩 `main`）；
 > ③ 用 bundle **实际 clone 回来**比对 commit 数与分支数，而不是只看 `bundle verify` 或文件大小。
+
+> **2026-10-17 完整退役批次**：`dsh-asr-voice` 的 GitHub 远端已 `archived`（`gh repo view --json isArchived` → `true`）、
+> 本地仓库已删除；同批归档两个本地私有插件 `dsh-antigravity-tool` / `dsh-codex-bypass`（非 git 仓库、
+> 无远端、未发布 npm）并删除本地目录。web profile 中三者的 `dependencies`、`dsh.profile.bundles`、
+> `pnpm-lock.yaml` 与 `node_modules` 链接均已清除，其余插件不受影响。
+> **npm 已收口（2026-10-17 20:29）**：`@bittersmilezzz/dsh-asr-voice` 已执行 `npm deprecate`
+> （registry `deprecated` 字段已生效）；`@bittersmilezzz/dsh-model-selector@0.3.9` 已发布并成为 `latest`。
+> 过程记录：首次 publish 因 token 失效报 E401/E404，`npm login` 后走 2FA web auth 才成功（registry 处理延迟约 2 分钟）。
+> **`doc/archives/` 更正**：该目录此前已丢失（历史归档未找回，2026-08-31 叙述中的「唯一副本」已不成立），
+> 2026-10-17 重建；当前含 `dsh-asr-voice-2026-10-17.bundle`、`dsh-asr-voice-2026-10-17.tar.gz`、
+> `dsh-antigravity-tool-2026-10-17.tar.gz`、`dsh-codex-bypass-2026-10-17.tar.gz` 四份，
+> 上表 2026-10-17 之前的归档文件均不存在。
 
 ## 脚本
 
