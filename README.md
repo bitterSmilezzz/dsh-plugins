@@ -26,11 +26,11 @@ GitHub Actions（`.github/workflows/validate-plugins.yml`）每 8 小时 + push 
 
 ## 账号下仓库登记
 
-**在用 · 受 `manifest.json` 门禁**（各行数据为该插件最近一次登记时点：dsh-notify 2026-09-16 / dsh-model-selector 2026-10-18；门禁项数随校验脚本增长，旧行未回填）：
+**在用 · 受 `manifest.json` 门禁**（各行数据为该插件最近一次登记时点：dsh-notify 2026-10-20 / dsh-model-selector 2026-10-18；门禁项数随校验脚本增长，旧行未回填）：
 
 | 插件 | 版本 | 回归测试 | 门禁 |
 | --- | --- | --- | --- |
-| `@bittersmilezzz/dsh-notify` | 0.1.14（tag `v0.1.14`：设置卡片残留自绘开关对齐官方 `Switch`；依赖线 `^0.1.6-alpha.1`） | 58 | 20/20 |
+| `@bittersmilezzz/dsh-notify` | 0.4.5（tag `v0.4.5`：试听与真实通知同规则恒 `silent` + 固定 tag；沿用 0.4.4 Windows 上按宿主分流发 `tag`（Electron 宿主实测可送达可替换）、阻塞/信息类 tag 分离，0.4.3 阻塞性通知不再被信息类通知 close——Windows 上「关掉 toast = 从通知中心移除」，旧实现会让待处理的审批请求凭空消失；适 DSH 0.2.1-rc.2） | 109 | 22/22 |
 | `@bittersmilezzz/dsh-model-selector` | 0.4.2（tag `v0.4.2`：补 `engines.node`/`engines.dsh` 与 README 兼容性小节；沿用 0.4.1 三段式布局、0.4.0 Codex 式滑杆（渐变 + 粒子）与菜单稳定性修复；适 DSH 0.2.1-rc.2） | 121 | 22/22 |
 
 **已退役 · 本地不再使用**（归档按 `doc/archives/` 命名；无 git 历史的用 tar 打包工作树，有历史的用 bundle。⚠ 2026-10-17 之前的归档文件已丢失，表中文件名仅作历史记录）：
